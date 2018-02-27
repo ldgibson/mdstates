@@ -56,20 +56,20 @@ Copyright (c) 2015--, Ariel Rokem, The University of Washington
 eScience Institute.
 """
 
-NAME = "shablona"
-MAINTAINER = "Ariel Rokem"
-MAINTAINER_EMAIL = "arokem@gmail.com"
+NAME = "mdreactions"
+MAINTAINER = "Luke Gibson"
+MAINTAINER_EMAIL = "ldgibson@uw.edu"
 DESCRIPTION = description
 LONG_DESCRIPTION = long_description
-URL = "http://github.com/uwescience/shablona"
+URL = "http://github.com/ldgibson/mdreactions"
 DOWNLOAD_URL = ""
 LICENSE = "MIT"
-AUTHOR = "Ariel Rokem"
-AUTHOR_EMAIL = "arokem@gmail.com"
+AUTHOR = "Luke Gibson"
+AUTHOR_EMAIL = "ldgibson@uw.edu"
 PLATFORMS = "OS Independent"
 MAJOR = _version_major
 MINOR = _version_minor
 MICRO = _version_micro
 VERSION = __version__
 PACKAGE_DATA = {'shablona': [pjoin('data', '*')]}
-REQUIRES = ["numpy"]
+REQUIRES = ["mdtraj", "numpy"]

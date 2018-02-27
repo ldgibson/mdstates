@@ -1,8 +1,8 @@
-#!/bin/env python3
 import mdtraj as md
 import numpy as np
 
-import mdreactions
+import core
+#import Users.ldgibson.Development.mdreactions.mdreactions.core
 
 
 def test_load_traj():

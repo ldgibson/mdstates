@@ -26,7 +26,7 @@ CLASSIFIERS = ["Development Status :: 3 - Alpha",
                "Topic :: Scientific/Engineering"]
 
 # Description should be a one-liner:
-description = "shablona: a template for small scientific Python projects"
+description = "mdreactions: a package for locating reactive events in MD trajectories"
 # Long description will go up on the pypi page
 long_description = """
 
@@ -71,5 +71,5 @@ MAJOR = _version_major
 MINOR = _version_minor
 MICRO = _version_micro
 VERSION = __version__
-PACKAGE_DATA = {'shablona': [pjoin('data', '*')]}
+PACKAGE_DATA = {'mdreactions': [pjoin('data', '*')]}
 REQUIRES = ["mdtraj", "numpy"]

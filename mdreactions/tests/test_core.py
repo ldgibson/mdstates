@@ -1,20 +1,22 @@
 import mdtraj as md
 import numpy as np
 
-import core
-#import Users.ldgibson.Development.mdreactions.mdreactions.core
+from .. import core
+#import Users.ldgibson.Development.core.core.core
+xyz_file = '/Users/ldgibson/Development/mdreactions/mdreactions/tests/test_cases/test_case.xyz'
+top_file = '/Users/ldgibson/Development/mdreactions/mdreactions/tests/test_cases/test_top.pdb'
 
 
 def test_load_traj():
     # Ensure an mdtraj.Trajectory object is returned
-    traj = mdreactions.load_traj('test_cases/test_case.xyz', 
-                                 'test_cases/test_top.pdb')
+    traj = core.load_traj(xyz_file, 
+                                 top_file)
     assert isinstance(traj, md.Trajectory), \
         '"traj" is not of type: mdtraj.Trajectory'
     
     # Test assertion for trajectory file existence
     try:
-        mdreactions.load_traj('bad_traj_file', 'test_cases/test_top.pdb')
+        core.load_traj('bad_traj_file', top_file)
     except (Exception):
         pass
     else:
@@ -23,7 +25,7 @@ def test_load_traj():
 
     # Test assertion for topology file existence
     try:
-        mdreactions.load_traj('test_cases/test_case.xyz', 'bad_top_file')
+        core.load_traj(xyz_file, 'bad_top_file')
     except (Exception):
         pass
     else:
@@ -37,14 +39,14 @@ def test_generate_pairs():
     # Ensure correct number of pairs is calculated
     test_num = 5
     true_pairs = test_num * (test_num - 1) / 2
-    test_pairs = mdreactions.generate_pairs(test_num)
+    test_pairs = core.generate_pairs(test_num)
 
     assert np.shape(test_pairs) == (true_pairs, 2), \
         'Bad shape to list of pairs: ' + str(np.shape(test_pairs))
 
     # Test assertion for TypeError
     try:
-        mdreactions.generate_pairs('ten')
+        core.generate_pairs('ten')
     except (TypeError):
         pass
     else:
@@ -85,8 +87,8 @@ def test_generate_pairs():
 
 def test_compute_distances():
 
-    test_traj = md.load('test_cases/test_case.xyz', 
-                        top='test_cases/test_top.pdb')
+    test_traj = md.load(xyz_file, 
+                        top=top_file)
 
     NUM_ATOMS = test_traj.n_atoms
     NUM_PAIRS = int(NUM_ATOMS * (NUM_ATOMS - 1) / 2)
@@ -98,7 +100,7 @@ def test_compute_distances():
             pairs[idx,:] = [i, j]
             idx = idx + 1
 
-    distances = mdreactions.compute_distances(test_traj, pairs, periodic=False)
+    distances = core.compute_distances(test_traj, pairs, periodic=False)
 
     assert distances.shape == (test_traj.n_frames, NUM_PAIRS), \
         "Shape of `distances' array is incorrect."
@@ -111,7 +113,7 @@ def test_build_connections():
 
     # Test negative cutoff value error
     try:
-        mdreactions.build_connections(dist, CUTOFF=-0.170)
+        core.build_connections(dist, CUTOFF=-0.170)
     except (Exception):
         pass
     else:
@@ -120,7 +122,7 @@ def test_build_connections():
 
     # Test 0 cutoff value error
     try:
-        mdreactions.build_connections(dist, CUTOFF=0)
+        core.build_connections(dist, CUTOFF=0)
     except (Exception):
         pass
     else:
@@ -140,7 +142,7 @@ def test_change_shape():
                            [0, 0, 1],
                            [0, 0, 0]]])
 
-    cmat = mdreactions.change_shape(rxn_matrix)
+    cmat = core.change_shape(rxn_matrix)
 
     # Check that there are no nonzero values in the lower triangle
     assert np.count_nonzero(np.tril(cmat)) == 0, \
@@ -164,7 +166,7 @@ def test_generate_ignore_list():
     real_ignore_list = [[[0, 2]],
                         [[0, 1]]]
 
-    ignore_list = mdreactions.generate_ignore_list(cmat)
+    ignore_list = core.generate_ignore_list(cmat)
 
     assert ignore_list[0] == real_ignore_list[0], \
         'Incorrect unbonded ignore_list being generated'

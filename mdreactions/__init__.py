@@ -1,4 +1,3 @@
 from __future__ import absolute_import, division, print_function
 from .version import __version__  # noqa
-#from .core import *  # noqa
-import core
+from .core import *  # noqa

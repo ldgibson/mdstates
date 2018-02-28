@@ -24,13 +24,13 @@ def clean(traj_file, top_file, states=[0, 1], start_p=[0.5, 0.5],
     - cutoff: 0.180 nm
     """
 
-    if type(states) != np.ndarray:
+    if type(states) is not np.ndarray:
         states = np.array(states)
-    if type(start_p) != np.ndarray:
+    if type(start_p) is not np.ndarray:
         start_p = np.array(start_p)
-    if type(trans_p) != np.ndarray:
+    if type(trans_p) is not np.ndarray:
         trans_p = np.array(trans_p)
-    if type(emission_p) != np.ndarray:
+    if type(emission_p) is not np.ndarray:
         emission_p = np.array(emission_p)
 
     traj = load_traj(traj_file, top_file)
@@ -145,9 +145,9 @@ def generate_ignore_list(cmat):
 
     for i in range(NUM_ATOMS-1):
         for j in range(i+1, NUM_ATOMS):
-            if (cmat[:, i, j] == 0).all() is True:
+            if (cmat[:, i, j] == 0).all():
                 ignore_list[0].append([i, j])
-            elif (cmat[:, i, j] == 1).all() is True:
+            elif (cmat[:, i, j] == 1).all():
                 ignore_list[1].append([i, j])
             else:
                 pass

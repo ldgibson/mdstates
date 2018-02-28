@@ -160,6 +160,15 @@ def test_change_shape():
 def test_generate_ignore_list():
     cmat = np.zeros((10, 3, 3))
 
+    # Contact matrix before i = 4:
+    # [[0 1 0],
+    #  [0 0 1],
+    #  [0 0 0]]
+    #
+    # Contact matrix after i = 4:
+    # [[0 1 0],
+    #  [0 0 0],
+    #  [0 0 0]]
     cmat[:, 0, 1] = 1
     cmat[:, 1, 2] = 1
     cmat[4, 1, 2] = 0

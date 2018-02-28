@@ -1,4 +1,2 @@
+mdtraj
 numpy
-scipy
-matplotlib
-pandas

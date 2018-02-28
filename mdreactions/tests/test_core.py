@@ -2,26 +2,27 @@ import mdtraj as md
 import numpy as np
 
 from .. import core
-#import Users.ldgibson.Development.core.core.core
-xyz_file = '/Users/ldgibson/Development/mdreactions/mdreactions/tests/test_cases/test_case.xyz'
-top_file = '/Users/ldgibson/Development/mdreactions/mdreactions/tests/test_cases/test_top.pdb'
+
+xyz_file = '/Users/ldgibson/Development/mdreactions/' +\
+           'mdreactions/tests/test_cases/test_case.xyz'
+top_file = '/Users/ldgibson/Development/mdreactions/' +\
+           'mdreactions/tests/test_cases/test_top.pdb'
 
 
 def test_load_traj():
     # Ensure an mdtraj.Trajectory object is returned
-    traj = core.load_traj(xyz_file, 
-                                 top_file)
+    traj = core.load_traj(xyz_file, top_file)
     assert isinstance(traj, md.Trajectory), \
         '"traj" is not of type: mdtraj.Trajectory'
-    
+
     # Test assertion for trajectory file existence
     try:
         core.load_traj('bad_traj_file', top_file)
     except (Exception):
         pass
     else:
-        raise Exception('Failed assertion', 
-            'Bad trajectory file was accepted without error')
+        raise Exception('Failed assertion',
+                        'Bad trajectory file was accepted without error')
 
     # Test assertion for topology file existence
     try:
@@ -29,8 +30,8 @@ def test_load_traj():
     except (Exception):
         pass
     else:
-        raise Exception('Failed assertion', 
-            'Bad topology file was accepted without error')
+        raise Exception('Failed assertion',
+                        'Bad topology file was accepted without error')
     return
 
 
@@ -52,20 +53,20 @@ def test_generate_pairs():
     else:
         raise Exception('Failed TypeError', 'The value passed must be numeric')
 
-    ### Check if incorrect pairs are being generated
-    # Check for pairs that are of an atom with itself
+    # Check if incorrect pairs are being generated
+    # - Check for pairs that are of an atom with itself
     self_pairs = []
     for i in range(test_num):
         self_pairs.append([i, i])
 
     for pair in self_pairs:
         if pair in test_pairs:
-            raise Exception('Bad pair', 
-                'Generating pairs of an atom and itself')
+            raise Exception('Bad pair',
+                            'Generating pairs of an atom and itself')
         else:
             pass
 
-    # Check for pairs that have the second atom index lower than the 
+    # Check for pairs that have the second atom index lower than the
     # first atom index
     bad_pairs = []
     for i in range(test_num-1):
@@ -77,8 +78,9 @@ def test_generate_pairs():
 
     for pair in bad_pairs:
         if pair in test_pairs:
-            raise Exception('Bad pair', 
-                'First atom index should always be larger than the second')
+            raise Exception('Bad pair',
+                            'First atom index should always ' +
+                            'be larger than the second')
         else:
             pass
 
@@ -87,8 +89,7 @@ def test_generate_pairs():
 
 def test_compute_distances():
 
-    test_traj = md.load(xyz_file, 
-                        top=top_file)
+    test_traj = md.load(xyz_file, top=top_file)
 
     NUM_ATOMS = test_traj.n_atoms
     NUM_PAIRS = int(NUM_ATOMS * (NUM_ATOMS - 1) / 2)
@@ -97,7 +98,7 @@ def test_compute_distances():
 
     for i in range(0, NUM_ATOMS-1):
         for j in range(i+1, NUM_ATOMS):
-            pairs[idx,:] = [i, j]
+            pairs[idx, :] = [i, j]
             idx = idx + 1
 
     distances = core.compute_distances(test_traj, pairs, periodic=False)
@@ -117,8 +118,8 @@ def test_build_connections():
     except (Exception):
         pass
     else:
-        raise Exception('Failed assertion error', 
-            'Negative cutoff value was allowed.')
+        raise Exception('Failed assertion error',
+                        'Negative cutoff value was allowed.')
 
     # Test 0 cutoff value error
     try:
@@ -126,15 +127,15 @@ def test_build_connections():
     except (Exception):
         pass
     else:
-        raise Exception('Failed assertion error', 
-            'Cutoff value of 0 is not allowed.')
+        raise Exception('Failed assertion error',
+                        'Cutoff value of 0 is not allowed.')
     return
 
 
 def test_change_shape():
-    rxn_matrix = np.array([[0, 1, 0], 
+    rxn_matrix = np.array([[0, 1, 0],
                            [1, 0, 1]], dtype=int)
-    
+
     real_cmat = np.array([[[0, 0, 1],
                            [0, 0, 0],
                            [0, 0, 0]],

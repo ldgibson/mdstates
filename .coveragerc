@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = mdreactions/*
+include = mdreactions/*
+omit = */setup.py
+[report]
+include = mdreactions/*

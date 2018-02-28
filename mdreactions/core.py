@@ -4,9 +4,9 @@ import mdtraj as md
 import numpy as np
 
 
-def clean(traj_file, top_file, states=[0, 1], start_p=[0.5, 0.5],\
-          trans_p=[[0.999, 0.001], [0.001, 0.999]],\
-          emission_p=[[0.6, 0.4], [0.4, 0.6]],\
+def clean(traj_file, top_file, states=[0, 1], start_p=[0.5, 0.5],
+          trans_p=[[0.999, 0.001], [0.001, 0.999]],
+          emission_p=[[0.6, 0.4], [0.4, 0.6]],
           periodic=True, CUTOFF=0.180):
     """
     Uses Hidden Markov Models and the Viterbi algorithm to clean the
@@ -39,7 +39,7 @@ def clean(traj_file, top_file, states=[0, 1], start_p=[0.5, 0.5],\
     distances = change_shape(distances)
     cmat = build_connections(distances, CUTOFF=CUTOFF)
     ignore_list = generate_ignore_list(cmat)
-    clean_cmat = clean_trajectory(cmat, ignore_list, states, \
+    clean_cmat = clean_trajectory(cmat, ignore_list, states,
                                   start_p, trans_p, emission_p)
     rxn_frames = find_reaction_frames(clean_cmat)
 
@@ -65,7 +65,7 @@ def generate_pairs(NUM_ATOMS):
 
     NUM_PAIRS = NUM_ATOMS * (NUM_ATOMS - 1) / 2
     pairs = []
-    
+
     idx = 0
     for i in range(NUM_ATOMS-1):
         for j in range(i+1, NUM_ATOMS):
@@ -75,7 +75,7 @@ def generate_pairs(NUM_ATOMS):
 
 
 def compute_distances(traj, pairs, periodic):
-    """Calculates and returns array of interatomic distances for all 
+    """Calculates and returns array of interatomic distances for all
     pairs passed"""
     return md.compute_distances(traj, pairs, periodic=periodic)
 
@@ -86,20 +86,20 @@ def change_shape(linear_mat):
     for every frame.
     """
 
-    NUM_ATOMS = int((1. + np.sqrt(1. + 8.*linear_mat.shape[1]))/2.)
+    NUM_ATOMS = int((1. + np.sqrt(1. + 8. * linear_mat.shape[1])) / 2.)
     NUM_FRAMES = linear_mat.shape[0]
     square_mat = np.zeros((NUM_FRAMES, NUM_ATOMS, NUM_ATOMS))
     upper_tri_idx = np.triu_indices(NUM_ATOMS, 1)
 
     for f in range(NUM_FRAMES):
-        square_mat[f, upper_tri_idx[0], upper_tri_idx[1]] = linear_mat[f,:]
+        square_mat[f, upper_tri_idx[0], upper_tri_idx[1]] = linear_mat[f, :]
 
     return square_mat
 
 
 def build_connections(distances, CUTOFF):
     """
-    Classifies every atom pair as bonded or unbonded, depending on 
+    Classifies every atom pair as bonded or unbonded, depending on
     their interatomic distance and the cutoff value
     """
 
@@ -114,7 +114,7 @@ def build_connections(distances, CUTOFF):
     cmat = np.zeros((NUM_FRAMES, NUM_ATOMS, NUM_ATOMS), dtype=int)
     for i in range(NUM_ATOMS-1):
         for j in range(i+1, NUM_ATOMS):
-            cmat[:,i,j] = np.where(distances[:,i,j] < CUTOFF, 1, 0)
+            cmat[:, i, j] = np.where(distances[:, i, j] < CUTOFF, 1, 0)
 
     return cmat
 
@@ -128,26 +128,26 @@ def build_contact_matrix(NUM_FRAMES, NUM_ATOMS, rxn_matrix):
             start = old_stop
             stop = start + i
             old_stop = stop
-            cmat[f,atom_idx,NUM_ATOMS-i:] = rxn_matrix[f,start:stop]
+            cmat[f, atom_idx, NUM_ATOMS-i:] = rxn_matrix[f, start:stop]
             atom_idx = atom_idx + 1
     return cmat
 
 
 def generate_ignore_list(cmat):
     """
-    Generates a list of points in the contact matrix that should be 
+    Generates a list of points in the contact matrix that should be
     ignored when using the Viterbi algorithm.  At each index in the
-    ignore list, the value (or connectivity) does not change for all 
+    ignore list, the value (or connectivity) does not change for all
     frames.
     """
-    ignore_list = [[],[]]
+    ignore_list = [[], []]
     NUM_ATOMS = cmat.shape[1]
 
     for i in range(NUM_ATOMS-1):
         for j in range(i+1, NUM_ATOMS):
-            if (cmat[:,i,j] == 0).all() == True:
+            if (cmat[:, i, j] == 0).all() is True:
                 ignore_list[0].append([i, j])
-            elif (cmat[:,i,j] == 1).all() == True:
+            elif (cmat[:, i, j] == 1).all() is True:
                 ignore_list[1].append([i, j])
             else:
                 pass
@@ -159,21 +159,21 @@ def viterbi(obs, states, start_p, trans_p, emit_p):
 
     V = [{}]
     for st in states:
-        V[0][st] = {"log_prob": np.log10(start_p[st] * emit_p[st,obs[0]]), \
+        V[0][st] = {"log_prob": np.log10(start_p[st] * emit_p[st, obs[0]]),
                     "prev": None}
 
     # Run Viterbi when t > 0
     for t in range(1, len(obs)):
         V.append({})
         for st in states:
-            max_tr_prob = max(V[t-1][prev_st]["log_prob"] + \
-                              np.log10(trans_p[prev_st,st]) \
+            max_tr_prob = max(V[t-1][prev_st]["log_prob"] +
+                              np.log10(trans_p[prev_st, st])
                               for prev_st in states)
 
             for prev_st in states:
                 if V[t-1][prev_st]["log_prob"] + \
-                        np.log10(trans_p[prev_st,st]) == max_tr_prob:
-                    max_prob = max_tr_prob + np.log10(emit_p[st,obs[t]])
+                        np.log10(trans_p[prev_st, st]) == max_tr_prob:
+                    max_prob = max_tr_prob + np.log10(emit_p[st, obs[t]])
                     V[t][st] = {"log_prob": max_prob, "prev": prev_st}
                     break
 
@@ -206,27 +206,27 @@ def clean_trajectory(cmat, ignore_list, states, start_p, trans_p, emission_p):
     for i in range(NUM_ATOMS-1):
         for j in range(i+1, NUM_ATOMS):
             if [i, j] in ignore_list[0]:
-                clean_cmat[:,i,j] = 0
+                clean_cmat[:, i, j] = 0
             elif [i, j] in ignore_list[1]:
-                clean_cmat[:,i,j] = 1
+                clean_cmat[:, i, j] = 1
             else:
-                obs = cmat[:,i,j]
-                clean_cmat[:,i,j] = viterbi(obs, states, start_p, \
-                                            trans_p, emission_p)
+                obs = cmat[:, i, j]
+                clean_cmat[:, i, j] = viterbi(obs, states, start_p,
+                                              trans_p, emission_p)
     return clean_cmat
 
 
 def find_reaction_frames(cmat):
     """
     Loops over all frames of the contact matrix and checks if any
-    changes occur.  Any frames in which a change occurred in the 
+    changes occur.  Any frames in which a change occurred in the
     contact matrix are recorded.
     """
     NUM_FRAMES = cmat.shape[0]
     rxn_frames = []
 
     for f in range(1, NUM_FRAMES):
-        if (cmat[f,:,:] == cmat[f-1,:,:]).all() == True:
+        if (cmat[f, :, :] == cmat[f-1, :, :]).all() is True:
             pass
         else:
             rxn_frames.append(f)

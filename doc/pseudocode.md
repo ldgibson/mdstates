@@ -8,7 +8,7 @@
 4. change the shape of the linear arrays at each frame to an `n x n` matrix
 5. determine connectivity using `cutoff` for all pairs
 
-*Contact matrix is now generated at all frames*
+**Contact matrix is now generated at all frames**
 
 6. check the contact matrix to see if there are any indices that never change
     - copy those indices into an `ignore_list`
@@ -18,3 +18,19 @@
     - if there is a change in the contact matrix, add the frame number to a list
     - return list of frames where reactions likely occurred
 9. determine the structure (e.g. SMILES) at each block of the trajectory between reactions
+
+
+### Desired Functionality:
+```
+>>> import mdreactions as mdr
+
+>>> CUTOFF = 0.180  # nm
+>>> rnet = mdr.ReactionNetwork('trajectory.xyz', 'topology.pdb',
+...                            CUTOFF, periodic=True)
+
+>>> rnet.clean_traj()
+>>> print(rnet.rxn_frames)
+[351, 1278, 3020]
+
+>>> rnet.build_network()
+```

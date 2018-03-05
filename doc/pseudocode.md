@@ -8,7 +8,7 @@
 4. change the shape of the linear arrays at each frame to an `n x n` matrix
 5. determine connectivity using `cutoff` for all pairs
 
-## Contact matrix is now generated at all frames
+*Contact matrix is now generated at all frames*
 
 6. check the contact matrix to see if there are any indices that never change
     - copy those indices into an `ignore_list`

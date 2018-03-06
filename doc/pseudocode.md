@@ -25,10 +25,12 @@
 >>> import mdreactions as mdr
 
 >>> CUTOFF = 0.180  # nm
+
 >>> rnet = mdr.ReactionNetwork('trajectory.xyz', 'topology.pdb',
 ...                            CUTOFF, periodic=True)
 
 >>> rnet.clean_traj()
+
 >>> print(rnet.rxn_frames)
 [351, 1278, 3020]
 

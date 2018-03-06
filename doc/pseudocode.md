@@ -36,3 +36,5 @@
 
 >>> rnet.build_network()
 ```
+
+**Reaction network figure here**

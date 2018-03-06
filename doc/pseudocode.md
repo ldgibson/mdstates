@@ -2,7 +2,7 @@
 
 1. read in trajectory and topology files [+ PBC (default=True) + bond cutoff distance]
 2. generate list of atom pairs to pass to `compute_distance()` from the number of atoms in trajectory
-    - only generate unique combinations of atom pairs ${n}\choose{2}$
+    - only generate unique combinations of atom pairs (n choose 2)
 3. compute the distances between all atom pairs generated
     - spits out a linear array of all the interatomic distances for each frame
 4. change the shape of the linear arrays at each frame to an `n x n` matrix

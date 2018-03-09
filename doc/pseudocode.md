@@ -29,13 +29,13 @@
 >>> rnet = mdr.ReactionNetwork('trajectory.xyz', 'topology.pdb',
 ...                            CUTOFF, periodic=True)
 
->>> rnet.clean_traj()
+>>> rnet.cleantraj()
 
->>> print(rnet.rxn_frames)
+>>> print(rnet.rxnframes)
 [3515, 12780, 30202]
 
->>> rnet.build_network()
+>>> rnet.buildnetwork()
 <show cool network graph here>
 
->>> rnet.gen_NEB_input()
+>>> rnet.getNEBinput()
 ```

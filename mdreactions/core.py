@@ -231,7 +231,7 @@ def find_reaction_frames(cmat):
     rxn_frames = []
 
     for f in range(1, NUM_FRAMES):
-        if (cmat[f, :, :] == cmat[f-1, :, :]).all() is True:
+        if (cmat[f, :, :] == cmat[f-1, :, :]).all():
             pass
         else:
             rxn_frames.append(f)

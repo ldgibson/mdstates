@@ -6,7 +6,7 @@ from ..util import getpath
 def test_getfile():
 
     data_dir_path = abspath(join(dirname(__file__), '..', 'data'))
-    
+
     assert getpath('bond_distances.csv') ==\
         join(data_dir_path, 'bond_distances.csv'),\
         'Incorrect path provided.'

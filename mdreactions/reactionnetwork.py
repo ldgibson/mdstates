@@ -18,7 +18,6 @@ class ReactionNetwork:
         sq_distances = self.change_shape(distances)
         cmat = self.build_connections(sq_distances, CUTOFF)
 
-
     def generate_pairs(self):
         """
         Generates and returns the list of atom pairs for which interatomic
@@ -36,14 +35,12 @@ class ReactionNetwork:
                 idx = idx + 1
         return pairs
 
-
     def compute_distances(self, pairs, periodic):
         """
         Calculates and returns array of interatomic distances for all
         pairs passed.
         """
         return md.compute_distances(self.traj, pairs, periodic=periodic)
-
 
     def change_shape(self, linear_mat):
         """
@@ -61,7 +58,6 @@ class ReactionNetwork:
                 linear_mat[f, :]
 
         return square_mat
-
 
     def build_connections(self, distances, CUTOFF):
         """

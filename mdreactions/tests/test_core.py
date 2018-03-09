@@ -193,7 +193,17 @@ def test_viterbi():
 
 
 def test_find_reaction_frames():
-    assert False, "No unit tests written yet"
+
+    testmat = np.array([[[0, 1],
+                       [0, 0]],
+                      [[0, 1],
+                       [0, 0]],
+                      [[0, 0],
+                       [0, 0]]])
+
+    test_frames = core.find_reaction_frames(testmat)
+
+    assert test_frames == [2], 'Incorrect reaction frames found'
 
     return
 

@@ -36,5 +36,5 @@
 >>> rnet.buildnetwork()
 <show cool network graph here>
 
->>> rnet.generateNEB(rnet.frames)  # saves CP2K input files as NEB.inp
+>>> rnet.createNEBinput(rnet.frames)  # saves CP2K input files as NEB.inp
 ```

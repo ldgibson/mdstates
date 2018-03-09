@@ -26,7 +26,7 @@ CLASSIFIERS = ["Development Status :: 3 - Alpha",
                "Topic :: Scientific/Engineering"]
 
 # Description should be a one-liner:
-description = "mdreactions: a package for locating reactive events in MD trajectories"
+description = "mdreactions: a package for analyzing reactive events in MD trajectories"
 # Long description will go up on the pypi page
 long_description = """
 
@@ -57,14 +57,14 @@ eScience Institute.
 """
 
 NAME = "mdreactions"
-MAINTAINER = "Luke Gibson"
+MAINTAINER = "Luke D Gibson"
 MAINTAINER_EMAIL = "ldgibson@uw.edu"
 DESCRIPTION = description
 LONG_DESCRIPTION = long_description
 URL = "http://github.com/ldgibson/mdreactions"
 DOWNLOAD_URL = ""
 LICENSE = "MIT"
-AUTHOR = "Luke Gibson"
+AUTHOR = "Luke D Gibson"
 AUTHOR_EMAIL = "ldgibson@uw.edu"
 PLATFORMS = "OS Independent"
 MAJOR = _version_major
@@ -72,4 +72,4 @@ MINOR = _version_minor
 MICRO = _version_micro
 VERSION = __version__
 PACKAGE_DATA = {'mdreactions': [pjoin('data', '*')]}
-REQUIRES = ["mdtraj", "numpy"]
+REQUIRES = ["numpy", "pandas", "cython", "scipy", "mdtraj"]

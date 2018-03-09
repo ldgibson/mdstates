@@ -31,7 +31,7 @@
 >>> rnet.cleantraj()
 
 >>> print(rnet.frames)
-[3515, 12780, 30202]
+(3515, 12780, 30202)
 
 >>> rnet.buildnetwork()
 <show cool network graph here>

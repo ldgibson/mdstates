@@ -1,2 +1,2 @@
 # mdreactions
-Repository for the development of a python package that analyzes reactions in molecular dynamics trajectories.
+This python package can be used to analyze reactions in molecular dynamics trajectores and generate graphs of reaction networks.

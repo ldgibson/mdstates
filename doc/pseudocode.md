@@ -32,9 +32,11 @@
 >>> rnet.clean_traj()
 
 >>> print(rnet.rxn_frames)
-[351, 1278, 3020]
+[3515, 12780, 30202]
 
 >>> rnet.build_network()
+
+>>> rnet.gen_NEB_input()
 ```
 
 **Reaction network figure here**

@@ -1,6 +1,6 @@
 # Pseudo-code for `mdreactions`
 
-1. read in trajectory and topology files [+ PBC (default=True) + bond cutoff distance]
+1. read in trajectory and topology files [+ PBC (default=True)]
 2. generate list of atom pairs to pass to `compute_distance()` from the number of atoms in trajectory
     - only generate unique combinations of atom pairs (n choose 2)
 3. compute the distances between all atom pairs generated

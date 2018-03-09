@@ -1,4 +1,4 @@
-from .util import getpath, loadfile
+from ..util import getpath, loadfile
 
 
 bonds = loadfile(getpath('bond_distances.csv'))

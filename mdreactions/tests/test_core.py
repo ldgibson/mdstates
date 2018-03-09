@@ -132,7 +132,7 @@ def test_build_connections():
     return
 
 
-def test_change_shape():
+def test_linear_to_square():
     rxn_matrix = np.array([[0, 1, 0],
                            [1, 0, 1]], dtype=int)
 
@@ -143,7 +143,7 @@ def test_change_shape():
                            [0, 0, 1],
                            [0, 0, 0]]])
 
-    cmat = core.change_shape(rxn_matrix)
+    cmat = core.linear_to_square(rxn_matrix)
 
     # Check that there are no nonzero values in the lower triangle
     assert np.count_nonzero(np.tril(cmat)) == 0, \

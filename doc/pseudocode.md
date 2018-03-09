@@ -22,20 +22,19 @@
 
 ### Desired Functionality:
 ```
->>> import mdreactions as mdr
+>>> from mdreactions import ReactionNetwork
 
->>> CUTOFF = 0.180  # nm
+>>> rnet = ReactionNetwork()
 
->>> rnet = mdr.ReactionNetwork('trajectory.xyz', 'topology.pdb',
-...                            CUTOFF, periodic=True)
+>>> rnet.loadtraj('trajectory.xyz', 'topology.pdb', periodic=True)
 
 >>> rnet.cleantraj()
 
->>> print(rnet.rxnframes)
+>>> print(rnet.frames)
 [3515, 12780, 30202]
 
 >>> rnet.buildnetwork()
 <show cool network graph here>
 
->>> rnet.generateNEB()
+>>> rnet.generateNEB(rnet.frames)  # saves CP2K input files as NEB.inp
 ```

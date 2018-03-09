@@ -35,8 +35,7 @@
 [3515, 12780, 30202]
 
 >>> rnet.build_network()
+<show cool network graph here>
 
 >>> rnet.gen_NEB_input()
 ```
-
-**Reaction network figure here**

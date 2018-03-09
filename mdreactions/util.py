@@ -10,9 +10,9 @@ def getpath(filename):
     return abspath(join(dirname(__file__), "data", filename))
 
 
-def loadfile(file_path, **kwargs):
+def loadfile(filename, **kwargs):
     """
     Loads the file at the given path into a pandas dataframe
     and returns it.
     """
-    return pd.read_csv(file_path, **kwargs)
+    return pd.read_csv(getpath(filename), **kwargs)

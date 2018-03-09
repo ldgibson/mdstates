@@ -9,15 +9,15 @@ top_file = '/Users/ldgibson/Development/mdreactions/' +\
            'mdreactions/tests/test_cases/test_top.pdb'
 
 
-def test_load_traj():
+def test_loadtraj():
     # Ensure an mdtraj.Trajectory object is returned
-    traj = core.load_traj(xyz_file, top_file)
+    traj = core.loadtraj(xyz_file, top_file)
     assert isinstance(traj, md.Trajectory), \
         '"traj" is not of type: mdtraj.Trajectory'
 
     # Test assertion for trajectory file existence
     try:
-        core.load_traj('bad_traj_file', top_file)
+        core.loadtraj('bad_traj_file', top_file)
     except (Exception):
         pass
     else:
@@ -26,7 +26,7 @@ def test_load_traj():
 
     # Test assertion for topology file existence
     try:
-        core.load_traj(xyz_file, 'bad_top_file')
+        core.loadtraj(xyz_file, 'bad_top_file')
     except (Exception):
         pass
     else:
@@ -203,7 +203,7 @@ def test_find_reaction_frames():
 
     test_frames = core.find_reaction_frames(testmat)
 
-    assert test_frames == [2], 'Incorrect reaction frames found'
+    assert test_frames == (2,), 'Incorrect reaction frames found'
 
     return
 

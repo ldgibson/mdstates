@@ -1,4 +1,5 @@
-from ..util import getpath, loadfile
+from ..util import loadfile
 
 
-bonds = loadfile(getpath('bond_distances.csv'))
+bonds = loadfile('bond_distances.csv')
+bonds.set_index('pair', drop=True, inplace=True)

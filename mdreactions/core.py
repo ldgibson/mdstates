@@ -4,7 +4,7 @@ import mdtraj as md
 import numpy as np
 
 
-def clean(traj_file, top_file, states=[0, 1], start_p=[0.5, 0.5],
+def cleantraj(traj_file, top_file, states=[0, 1], start_p=[0.5, 0.5],
           trans_p=[[0.999, 0.001], [0.001, 0.999]],
           emission_p=[[0.6, 0.4], [0.4, 0.6]],
           periodic=True, CUTOFF=0.180):
@@ -33,7 +33,7 @@ def clean(traj_file, top_file, states=[0, 1], start_p=[0.5, 0.5],
     if type(emission_p) is not np.ndarray:
         emission_p = np.array(emission_p)
 
-    traj = load_traj(traj_file, top_file)
+    traj = loadtraj(traj_file, top_file)
     pairs = generate_pairs(traj.n_atoms)
     distances = compute_distances(traj, pairs, periodic=periodic)
     distances = linear_to_square(distances)
@@ -46,7 +46,7 @@ def clean(traj_file, top_file, states=[0, 1], start_p=[0.5, 0.5],
     return rxn_frames
 
 
-def load_traj(trajectory_file, topology_file):
+def loadtraj(trajectory_file, topology_file):
     """
     Loads trajectory into python. Returns mdtraj.Trajectory object.
     """
@@ -236,7 +236,7 @@ def find_reaction_frames(cmat):
         else:
             rxn_frames.append(f)
 
-    return rxn_frames
+    return tuple(rxn_frames)
 
 
 def generate_SMILES(cmat, rxn_frames):

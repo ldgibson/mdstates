@@ -3,7 +3,7 @@ from os.path import abspath, dirname, join
 from ..util import getpath
 
 
-def test_getfile():
+def test_getpath():
 
     data_dir_path = abspath(join(dirname(__file__), '..', 'data'))
 

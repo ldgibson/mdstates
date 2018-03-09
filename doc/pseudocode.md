@@ -37,5 +37,5 @@
 >>> rnet.buildnetwork()
 <show cool network graph here>
 
->>> rnet.getNEBinput()
+>>> rnet.generateNEB()
 ```

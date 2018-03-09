@@ -3,5 +3,8 @@
 *.DS_Store
 .cache/
 _build/
+build/
+dist/
 auto_examples/
 gen_api/
+mdreactions.egg-info/

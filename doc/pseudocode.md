@@ -38,3 +38,18 @@
 
 >>> rnet.createNEBinput(rnet.frames)  # saves CP2K input files as NEB.inp
 ```
+
+```
+addtraj(traj, top)
+pairs = generate_pairs(n_atoms)
+distances = compute_distances(pairs)
+contact_matrix = generate_contact_matrix(distances)
+
+ignore_list = generate_ignore_list(contact_matrix, n=10)
+cleaned_cmat = clean_signal(contact_matrix, **probabilities)
+
+frames = transition_frames(cleaned_cmat)
+SMILES, weights = generate_SMILES(cleaned_cmat)
+plot_network(SMILES, weights)
+
+```

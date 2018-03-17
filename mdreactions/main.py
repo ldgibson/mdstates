@@ -5,7 +5,7 @@ import pandas as pd
 from .data import bonds
 
 
-def Network:
+class Network:
 
     def __init__(self):
         self.replica = {}
@@ -32,9 +32,9 @@ def Network:
             rep_id = 0
             self.replica[rep_id] = {'traj': None, 'cmat': None}
         else:
-            rep_id = list(self.replica.keys()).max() + 1
+            rep_id = max(list(self.replica.keys())) + 1
             self.replica[rep_id] = {'traj': None, 'cmat': None}
-            
+
         self.replica[rep_id]['traj'] = md.load(trajectory, top=topology,
                                                **kwargs)
 
@@ -50,7 +50,6 @@ def Network:
             pass
 
         return
-
 
     def generate_contact_matrix(self):
 
@@ -69,7 +68,7 @@ def Network:
                 distances = self._compute_distances(rep_id)
                 distances = self._reshape_to_square(distances)
                 self.replcia[rep_id]['cmat'] =\
-                    self._build_connections(distances))
+                    self._build_connections(distances)
             else:
                 pass
 
@@ -104,7 +103,7 @@ def Network:
     def _reshape_to_square(self, linear_matrix):
         """
         Converts a row matrix into a square matrix.
-        
+
         Takes each row and reshapes it to fit into the upper triangle
         of a square matrix, i.e. populating the upper off-diagonal
         elements.
@@ -138,7 +137,8 @@ def Network:
         square_matrix = np.zeros((frames, self.n_atoms, self.n_atoms))
         upper_tri_id = np.triu_indices(self.n_atoms, 1)
 
-        for f in range(frames): square_matrix[f, upper_tri_id[0], upper_tri_id[1]] =\
+        for f in range(frames):
+            square_matrix[f, upper_tri_id[0], upper_tri_id[1]] =\
                 linear_matrix[f, :]
 
         return square_matrix
@@ -195,11 +195,11 @@ def Network:
         pair.append(str(atom1)+'-'+str(atom2))
         pair.append(str(atom2)+'-'+str(atom1))
         loc_bool = [x in bonds.index for x in pair]
-        if all([y == False for y in loc_bool]):
-            raise Exception('Bond distance not defined',
-                            pair[0]+' not found in bond distance database. '+\
-                            'Please add '+pair[0]+' cutoff distance to '+\
-                            'database using Network.assign_cutoff().')
-        else:
+        if any(loc_bool):
             idx = loc_bool.index(True)
             return float(bonds[pair[idx]])
+        else:
+            raise Exception('Bond distance not defined',
+                            pair[0]+' not found in bond distance database. ' +
+                            'Please add '+pair[0]+' cutoff distance to ' +
+                            'database using Network.assign_cutoff().')

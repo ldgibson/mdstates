@@ -8,3 +8,4 @@ dist/
 auto_examples/
 gen_api/
 mdreactions.egg-info/
+*/.ipynb_checkpoints/

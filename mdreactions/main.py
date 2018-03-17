@@ -15,7 +15,7 @@ def Network:
         self.frames = ()
 
         self._pairs = []
-        self._cutoff = None
+        self._cutoff = {}
         return
 
     def addtraj(self, trajectory, topology, **kwargs):
@@ -56,6 +56,11 @@ def Network:
 
         if not self._pairs:
             self._generate_pairs()
+        else:
+            pass
+
+        if not self._cutoff:
+            self._build_cutoff()
         else:
             pass
 
@@ -133,8 +138,7 @@ def Network:
         square_matrix = np.zeros((frames, self.n_atoms, self.n_atoms))
         upper_tri_id = np.triu_indices(self.n_atoms, 1)
 
-        for f in range(frames):
-            square_matrix[f, upper_tri_id[0], upper_tri_id[1]] =\
+        for f in range(frames): square_matrix[f, upper_tri_id[0], upper_tri_id[1]] =\
                 linear_matrix[f, :]
 
         return square_matrix
@@ -170,31 +174,32 @@ def Network:
         return
 
     def _build_cutoff(self):
+
         assert self.atoms, "Atom list is not yet compiled"
-        self._cutoff = np.zeros((self.n_atoms, self.n_atoms))
-        for i in range(self.n_atoms-1):
-            for j in range(i+1, self.n_atoms):
-                self._assign_cutoff(i, j)
 
-
-    def _assign_cutoff(self, i, j):
         atoms = self.atoms
-        self._cutoff[i, j] = _bond_distance(i, j)
+        unique = []
+        for atom in atoms:
+            if atom not in unique:
+                unique.append(atom)
 
-    def _bond_distance(self, i, j):
+        for i, atom1 in enumerate(unique):
+            for atom2 in unique[i:]:
+                if frozenset([atom1, atom2]) not in self._cutoff.keys():
+                    self._cutoff[frozenset(atom1, atom2)] =\
+                        self._bond_distance(atom1, atom2)
+        return
+
+    def _bond_distance(self, atom1, atom2):
         pair = []
-        pair.append(str(atoms[i]) + '-' + str(atoms[j]))
-        pair.append(str(atoms[j]) + '-' + str(atoms[i]))
-        loc = [x in bonds.index for x in pair]
-        if all([y == False for y in loc]):
+        pair.append(str(atom1)+'-'+str(atom2))
+        pair.append(str(atom2)+'-'+str(atom1))
+        loc_bool = [x in bonds.index for x in pair]
+        if all([y == False for y in loc_bool]):
             raise Exception('Bond distance not defined',
                             pair[0]+' not found in bond distance database. '+\
-                            'Please add '+pair[0]+' bond distance to '+\
-                            'database using Network.assign_bond_distance().')
-
+                            'Please add '+pair[0]+' cutoff distance to '+\
+                            'database using Network.assign_cutoff().')
         else:
-            idx = loc.index(True)
-            return bonds[pair[idx]]
-
-
-
+            idx = loc_bool.index(True)
+            return float(bonds[pair[idx]])

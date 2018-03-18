@@ -59,12 +59,13 @@ class Network:
         self.replica[rep_id]['traj'] = md.load(trajectory, top=topology,
                                                **kwargs)
 
-        # Set the number of atoms
+        # Set the number of atoms.
         if self.n_atoms is None:
             self.n_atoms = self.replica[rep_id]['traj'].n_atoms
         else:
             pass
 
+        # Generate the atom list.
         if self.atoms is None:
             self._get_atoms(rep_id)
         else:
@@ -86,12 +87,14 @@ class Network:
         on the atom pair's cutoff.
         """
 
+        # Check if atom pairs have been determined.
         if not self._pairs:
             self._generate_pairs()
         else:
             pass
 
-        if not self._cutoff:
+        # Check if cutoff matrix has been built.
+        if len(self._cutoff) < len(self._pairs):
             self._build_cutoff()
         else:
             pass
@@ -100,7 +103,7 @@ class Network:
             if self.replica[rep_id]['cmat'] is None:
                 distances = self._compute_distances(rep_id)
                 distances = self._reshape_to_square(distances)
-                self.replcia[rep_id]['cmat'] =\
+                self.replica[rep_id]['cmat'] =\
                     self._build_connections(distances)
             else:
                 pass
@@ -218,8 +221,11 @@ class Network:
 
         for i in range(self.n_atoms-1):
             for j in range(i+1, self.n_atoms):
-                cmat[:, i, j] = np.where(distances[:, i, j] <
-                                         self._cutoff[i, j], 1, 0)
+                atom1 = self.atoms[i]
+                atom2 = self.atoms[j]
+                cmat[:, i, j] =\
+                    np.where(distances[:, i, j] <
+                             self._cutoff[frozenset([atom1, atom2])], 1, 0)
         return cmat
 
     def _get_atoms(self, rep_id):
@@ -283,7 +289,7 @@ class Network:
         loc_bool = [x in bonds.index for x in pair]
         if any(loc_bool):
             idx = loc_bool.index(True)
-            return float(bonds.loc[pair[idx], 'distance'])
+            return float(bonds.loc[pair[idx], 'distance']) * 0.10 + 0.02
         else:
             raise LookupError(pair[0] + " was not found in cutoff " +
                               "database. Please manually add it to " +

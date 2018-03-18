@@ -22,10 +22,14 @@ class Network:
         """
         Loads a trajectory into the class.
 
-        Args:
-            trajectory (str): File name of the trajectory file.
-            topology (str): File name of the topology file.
-            traj_id (int): ID of the loaded trajectory.
+        Parmeters
+        ---------
+        trajectory : str
+            File name of the trajectory file.
+        topology : str
+            File name of the topology file.
+        traj_id : int
+            ID of the loaded trajectory.
         """
 
         if not self.replica:
@@ -88,12 +92,16 @@ class Network:
         """
         Computes the interatomic distances for all pairs of atoms.
 
-        Args:
-            rep_id (int): ID number of the replica of interest.
+        Parameters
+        ----------
+        rep_id : int
+            ID number of the replica of interest.
 
-        Returns:
-            numpy.ndarray: Interatomic distances for all specified atom
-                pairs. Shape is (n_frames, n_pairs).
+        Returns
+        -------
+        numpy.ndarray
+            Interatomic distances for all specified atom pairs. Shape
+            is (n_frames, n_pairs).
         """
         assert self._pairs, "Atom pairs not determined yet."
 
@@ -108,16 +116,21 @@ class Network:
         of a square matrix, i.e. populating the upper off-diagonal
         elements.
 
-        Args:
-            linear_matrix (numpy.ndarray): Row of interatomic distances
-                at every frame. Shape is (n_frames, n_pairs).
+        Parameters
+        ----------
+        linear_matrix : numpy.ndarray
+            Row of interatomic distances at every frame. Shape is
+            (n_frames, n_pairs).
 
-        Returns:
-            numpy.ndarray: Reshaped matrix to be 3D. Each row is
-                reshaped into a square matrix with only the upper off-
-                diagonal elements populated for all frames.
+        Returns
+        -------
+        square_matrix : numpy.ndarray
+            Reshaped matrix to be 3D. Each row is reshaped into a square
+            matrix with only the upper off-diagonal elements populated
+            for all frames.
 
-        Example:
+        Example
+        -------
             >>> foo = np.array([[1, 2, 3],
                                 [4, 5, 6]])
 
@@ -186,7 +199,7 @@ class Network:
         for i, atom1 in enumerate(unique):
             for atom2 in unique[i:]:
                 if frozenset([atom1, atom2]) not in self._cutoff.keys():
-                    self._cutoff[frozenset(atom1, atom2)] =\
+                    self._cutoff[frozenset([atom1, atom2])] =\
                         self._bond_distance(atom1, atom2)
         return
 
@@ -197,9 +210,14 @@ class Network:
         loc_bool = [x in bonds.index for x in pair]
         if any(loc_bool):
             idx = loc_bool.index(True)
-            return float(bonds[pair[idx]])
+            return float(bonds.loc[pair[idx], 'distance'])
         else:
-            raise Exception('Bond distance not defined',
-                            pair[0]+' not found in bond distance database. ' +
-                            'Please add '+pair[0]+' cutoff distance to ' +
-                            'database using Network.assign_cutoff().')
+            raise LookupError(pair[0] + " was not found in cutoff " +
+                              "database. Please manually add it to " +
+                              "the cutoff dictionary using " +
+                              "Network.set_cutoff() and then rerun " +
+                              "Network.generate_contact_matrix().")
+
+    def set_cutoff(self, atoms, cutoff):
+        self._cutoff[frozenset(atoms)] = cutoff
+        return

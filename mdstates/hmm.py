@@ -5,14 +5,36 @@ __all__ = ['generate_ignore_list', 'viterbi']
 
 def generate_ignore_list(cmat, n):
     """
+    Generates an ignore list of indices.
+
+    For a given matrix `cmat`, find all indices that do not ever change
+    more than `n` times and record their most common value.
+
+    Parameters
+    ----------
+    cmat : numpy.ndarray
+        Contact matrix.
+    n : int
+        Threshold for being placed on the ignore list.
+
+    Returns
+    -------
+    ignore_list : list of list of int
+        All indices in `ignore_list[0]` do not express a value other
+        than 0 frequently enough to be processed. The same anology goes
+        for `ignore_list[1]`.
     """
     ignore_list = [[], []]
     n_atoms = cmat.shape[1]
 
     for i in range(n_atoms-1):
         for j in range(i+1, n_atoms):
+            # Find all unique values and their respective counts
             values, counts = np.unique(cmat[:, i, j], return_counts=True)
             unique = dict(zip(values, counts))
+
+            # If 0 or 1 never appear, place that index on
+            # the ignore_list.
             if 1 not in unique.keys():
                 ignore_list[0].append([i, j])
                 continue
@@ -33,7 +55,22 @@ def generate_ignore_list(cmat, n):
 
 def viterbi(obs, states, start_p, trans_p, emission_p):
     """Algorithm used to decode a signal and find the optimal path.
-    
+
+    Parameters
+    ----------
+    obs : numpy.ndarray
+        Numerical representations of the observations.
+    states : list of int
+        Numerical representations of the states in the system.
+    start_p : list of float
+        Probabilities of starting in a particular hidden state.
+    trans_p : list of list of float
+        Probabilities of transitioning from one hidden state to
+        another.
+    emission_p : list of of list of float
+        Probabilities of emitting an observable given the present
+        hidden state.
+
     Returns
     -------
     optimal_path : list of int

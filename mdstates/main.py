@@ -322,6 +322,14 @@ class Network:
                               "Network.generate_contact_matrix().")
 
     def set_cutoff(self, atoms, cutoff):
-        """Assigns the cutoff for a pair of atoms."""
+        """Assigns the cutoff for a pair of atoms.
+        
+        Parameters
+        ----------
+        atoms : list of str
+            List containing two elemental symbols as strings.
+        cutoff : float
+            Cutoff value for the two elements in `atoms`.
+        """
         self._cutoff[frozenset(atoms)] = cutoff
         return

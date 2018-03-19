@@ -1,10 +1,44 @@
 import numpy as np
 
+__all__ = ['generate_ignore_list', 'viterbi']
+
+
+def generate_ignore_list(cmat, n):
+    """
+    """
+    ignore_list = [[], []]
+    n_atoms = cmat.shape[1]
+
+    for i in range(n_atoms-1):
+        for j in range(i+1, n_atoms):
+            values, counts = np.unique(cmat[:, i, j], return_counts=True)
+            unique = dict(zip(values, counts))
+            if 1 not in unique.keys():
+                ignore_list[0].append([i, j])
+                continue
+            elif 0 not in unique.keys():
+                ignore_list[1].append([i, j])
+                continue
+            else:
+                pass
+
+            if unique[1] <= n:
+                ignore_list[0].append([i, j])
+            elif unique[0] <= n:
+                ignore_list[1].append([i, j])
+            else:
+                pass
+    return ignore_list
+
 
 def viterbi(obs, states, start_p, trans_p, emission_p):
     """Algorithm used to decode a signal and find the optimal path.
-
-    Viterbi algorithm used to decode a noisy trajectory"""
+    
+    Returns
+    -------
+    optimal_path : list of int
+        Optimal path of the system given the observations and Hidden
+        Markov Model parameters."""
 
     V = [{}]
     for st in states:

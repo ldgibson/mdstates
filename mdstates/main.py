@@ -2,7 +2,7 @@ import mdtraj as md
 import numpy as np
 
 from .data import bonds
-from .hmm import viterbi
+from .hmm import *
 
 
 class Network:
@@ -29,7 +29,7 @@ class Network:
         self.atoms = None
         self.n_atoms = None
         self.pbc = True
-        self.frames = ()
+        self.frames = []
 
         self._pairs = []
         self._cutoff = {}
@@ -49,17 +49,13 @@ class Network:
             ID of the loaded trajectory.
         """
 
-#        if not self.replica:
-#            rep_id = 0
-#            self.replica[rep_id] = {'traj': None, 'cmat': None}
-#        else:
-#            rep_id = max(list(self.replica.keys())) + 1
-#            self.replica[rep_id] = {'traj': None, 'cmat': None}
-
-        self.replica.append({'traj': None, 'cmat': None})
+        self.replica.append({'traj': None, 'cmat': None, 'processed': False})
 
         self.replica[-1]['traj'] = md.load(trajectory, top=topology,
-                                               **kwargs)
+                                           **kwargs)
+
+        # Add a sub-list for frames.
+        self.frames.append([])
 
         # Set the number of atoms.
         if self.n_atoms is None:
@@ -323,7 +319,7 @@ class Network:
 
     def set_cutoff(self, atoms, cutoff):
         """Assigns the cutoff for a pair of atoms.
-        
+
         Parameters
         ----------
         atoms : list of str
@@ -332,4 +328,114 @@ class Network:
             Cutoff value for the two elements in `atoms`.
         """
         self._cutoff[frozenset(atoms)] = cutoff
+        return
+
+    def decode(self, n=10, states=[0, 1], start_p=[0.5, 0.5],
+               trans_p=[[0.999, 0.001], [0.001, 0.999]],
+               emission_p=[[0.60, 0.40], [0.40, 0.60]]):
+        """Uses Viterbi algorithm to clean the signal for each bond.
+
+        Prior to processing each individual index in the contact
+        matrix, an ignore list is constructed to reduce the number of
+        times the Viterbi algorithm needs to be executed. If at any
+        given index in the contact matrix there are more than `n`
+        occurrences of the least common value at that index, then the
+        signal for that index will be processed with the Viterbi
+        algorithm.
+
+        Parameters
+        ----------
+        n : int
+            Threshold for determining if a bond should be decoded. If a
+            bond has more than `n` occurrences of the least common
+            state, then it will be processed with the Viterbi algorithm.
+        states : list of int, optional
+            Numerical representations of the states in the system.
+            Default is [0, 1].
+        start_p : list of float, optional
+            Probabilities of starting in a particular hidden state.
+            Default is [0.5, 0.5].
+        trans_p : list of list of float, optional
+            Probabilities of transitioning from one hidden state to
+            another. Default is [[0.999, 0.001], [0.001, 0.999]].
+        emission_p : list of of list of float, optional
+            Probabilities of emitting an observable given the present
+            hidden state.
+        """
+        for rep in self.replica:
+            assert rep['cmat'] is not None,\
+                "Not all contact matrices have been generated."
+
+        # Convert HMM parameters to ndarrays.
+        if type(states) is not np.ndarray:
+            states = np.array(states)
+        if type(start_p) is not np.ndarray:
+            start_p = np.array(start_p)
+        if type(trans_p) is not np.ndarray:
+            trans_p = np.array(trans_p)
+        if type(emission_p) is not np.ndarray:
+            emission_p = np.array(emission_p)
+
+        counter = 0
+
+        for rep in self.replica:
+            if rep['processed']:
+                pass
+            else:
+                ignore_list = generate_ignore_list(rep['cmat'], n)
+
+                for i in range(self.n_atoms-1):
+                    for j in range(i+1, self.n_atoms):
+                        if [i, j] in ignore_list[0]:
+                            rep['cmat'][:, i, j] = 0
+                        elif [i, j] in ignore_list[1]:
+                            rep['cmat'][:, i, j] = 1
+                        else:
+                            counter += 1
+                            rep['cmat'][:, i, j] = viterbi(rep['cmat'][:, i, j],
+                                                           states, start_p,
+                                                           trans_p, emission_p)
+
+                # Track that this replica's contact
+                # matrix has been processed.
+                rep['processed'] = True
+
+                self._find_transition_frames()
+
+        print("{} iterations of Viterbi algorithm.".format(counter))
+        return
+
+    def _find_transition_frames(self):
+        """Finds transitions in the processed contact matrix.
+
+        Checks if two consecutive contact matrices are not equivalent.
+        If they are not, then a transition likely occured and the frame
+        number is recorded.
+
+        Raises
+        ------
+        AssertionError
+            If any contact matrices have not been constructed yet.
+        AssertionError
+            If any contact matrices have not been processed yet.
+        AssertionError
+            If the number of empty lists in frames is less than the
+            number of replicas.
+        """
+
+        for rep in self.replica:
+            assert rep['cmat'] is not None,\
+                "Not all contact matrices have been constructed."
+            assert rep['processed'],\
+                "Not all replica contact matrices have been processed."
+
+        assert len(self.frames) == len(self.replica),\
+            "Number of sets of frames does not equal number of replicas."
+
+        for rep_id, rep in enumerate(self.replica):
+            for f in range(1, rep['cmat'].shape[0]):
+                if (rep['cmat'][f, :, :] == rep['cmat'][f-1, :, :]).all():
+                    pass
+                else:
+                    self.frames[rep_id].append(f)
         return

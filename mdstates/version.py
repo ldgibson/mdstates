@@ -26,7 +26,7 @@ CLASSIFIERS = ["Development Status :: 3 - Alpha",
                "Topic :: Scientific/Engineering"]
 
 # Description should be a one-liner:
-description = "mdreactions: a package for analyzing reactive events in MD trajectories"
+description = "mdstates: a package for analyzing states in MD trajectories"
 # Long description will go up on the pypi page
 long_description = """
 
@@ -56,7 +56,7 @@ Copyright (c) 2015--, Ariel Rokem, The University of Washington
 eScience Institute.
 """
 
-NAME = "mdreactions"
+NAME = "mdstates"
 MAINTAINER = "Luke D Gibson"
 MAINTAINER_EMAIL = "ldgibson@uw.edu"
 DESCRIPTION = description
@@ -71,5 +71,5 @@ MAJOR = _version_major
 MINOR = _version_minor
 MICRO = _version_micro
 VERSION = __version__
-PACKAGE_DATA = {'mdreactions': [pjoin('data', '*')]}
+PACKAGE_DATA = {'mdstates': [pjoin('data', '*')]}
 REQUIRES = ["numpy", "pandas", "cython", "scipy", "mdtraj"]

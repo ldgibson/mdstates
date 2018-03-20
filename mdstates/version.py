@@ -30,30 +30,21 @@ description = "mdstates: a package for analyzing states in MD trajectories"
 # Long description will go up on the pypi page
 long_description = """
 
-Shablona
+MDStates
 ========
-Shablona is a template project for small scientific Python projects.
-
-It contains software implementations of an analysis of some simple data, but
-more importantly, it contains infrastructure for testing, documentation,
-continuous integration and deployment, which can be easily adapted
-to use in other projects.
-
-To get started using these components in your own software, please go to the
-repository README_.
-
-.. _README: https://github.com/uwescience/shablona/blob/master/README.md
+mdstates is a python package for locating and analyzing different states in
+MD trajectories.
 
 License
 =======
-``shablona`` is licensed under the terms of the MIT license. See the file
+``mdstates`` is licensed under the terms of the MIT license. See the file
 "LICENSE" for information on the history of this software, terms & conditions
 for usage, and a DISCLAIMER OF ALL WARRANTIES.
 
 All trademarks referenced herein are property of their respective holders.
 
-Copyright (c) 2015--, Ariel Rokem, The University of Washington
-eScience Institute.
+Copyright (c) 2018--, Luke D Gibson, The University of Washington
+Department of Chemical Engineering.
 """
 
 NAME = "mdstates"

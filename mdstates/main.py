@@ -2,7 +2,7 @@ import mdtraj as md
 import numpy as np
 
 from .data import bonds
-from .hmm import *
+from .hmm import generate_ignore_list, viterbi
 
 
 class Network:
@@ -25,6 +25,7 @@ class Network:
     """
 
     def __init__(self):
+        """Inits `Network` object."""
         self.replica = []
         self.atoms = None
         self.n_atoms = None
@@ -37,7 +38,13 @@ class Network:
 
     def addreplica(self, trajectory, topology, **kwargs):
         """
-        Loads a trajectory into the class.
+        Adds a replica to the class object.
+        
+        Loads a trajectory into the `replica` attribute. Also adds an
+        emtpy list to `frames` attribute. On the first replica added,
+        attributes `n_atoms` and `atoms` are loaded from the topology
+        information. All replicas must have the same topology and must
+        have different `trajectory` paths.
 
         Parmeters
         ---------
@@ -45,14 +52,32 @@ class Network:
             File name of the trajectory file.
         topology : str
             File name of the topology file.
-        traj_id : int
-            ID of the loaded trajectory.
-        """
+        **kwargs
+            Additional keywords that can be sent to `mdtraj.load()`.
 
-        self.replica.append({'traj': None, 'cmat': None, 'processed': False})
+        Raises
+        ------
+        AssertionError
+            If a new replica does not have a topology that matches the
+            topology of the previously added replica.
+        AssertionError
+            If the trajectory path matches a previously loaded replica.
+        """
+        if len(self.replica) > 0:
+            assert self.replica[-1]['traj'].topology ==\
+                md.load(topology).topology,\
+                "All topologies must be the same."
+
+            for rep in self.replica:
+                assert rep['path'] != trajectory,\
+                    "A trajectory from that location is already loaded."
+
+        self.replica.append({'traj': None, 'cmat': None, 'path': None,
+                             'processed': False})
 
         self.replica[-1]['traj'] = md.load(trajectory, top=topology,
                                            **kwargs)
+        self.replica[-1]['path'] = trajectory
 
         # Add a sub-list for frames.
         self.frames.append([])
@@ -96,7 +121,7 @@ class Network:
 
     def generate_contact_matrix(self):
         """
-        Converts each trajectory to a series of contact matrices.
+        Converts each trajectory frame to a contact matrix.
 
         The unique atom pairs are first generated if they have not been
         generated previously. Next, the cutoff dictionary for all the
@@ -128,6 +153,97 @@ class Network:
             else:
                 pass
 
+        return
+
+    def set_cutoff(self, atoms, cutoff):
+        """Assigns the cutoff for a pair of atoms.
+
+        Parameters
+        ----------
+        atoms : list of str
+            List containing two elemental symbols as strings.
+        cutoff : float
+            Cutoff value for the two elements in `atoms`.
+        """
+        self._cutoff[frozenset(atoms)] = cutoff
+        return
+
+    def decode(self, n=10, states=[0, 1], start_p=[0.5, 0.5],
+               trans_p=[[0.999, 0.001], [0.001, 0.999]],
+               emission_p=[[0.60, 0.40], [0.40, 0.60]]):
+        """Uses Viterbi algorithm to clean the signal for each bond.
+
+        Prior to processing each individual index in the contact
+        matrix, an ignore list is constructed to reduce the number of
+        times the Viterbi algorithm needs to be executed. If at any
+        given index in the contact matrix there are more than `n`
+        occurrences of the least common value at that index, then the
+        signal for that index will be processed with the Viterbi
+        algorithm.
+
+        Parameters
+        ----------
+        n : int
+            Threshold for determining if a bond should be decoded. If a
+            bond has more than `n` occurrences of the least common
+            state, then it will be processed with the Viterbi algorithm.
+        states : list of int, optional
+            Numerical representations of the states in the system.
+            Default is [0, 1].
+        start_p : list of float, optional
+            Probabilities of starting in a particular hidden state.
+            Default is [0.5, 0.5].
+        trans_p : list of list of float, optional
+            Probabilities of transitioning from one hidden state to
+            another. Default is [[0.999, 0.001], [0.001, 0.999]].
+        emission_p : list of of list of float, optional
+            Probabilities of emitting an observable given the present
+            hidden state. Default is [[0.6, 0.4], [0.4, 0.6]].
+        """
+        for rep in self.replica:
+            assert rep['cmat'] is not None,\
+                "Not all contact matrices have been generated."
+
+        # Convert HMM parameters to ndarrays.
+        if type(states) is not np.ndarray:
+            states = np.array(states)
+        if type(start_p) is not np.ndarray:
+            start_p = np.array(start_p)
+        if type(trans_p) is not np.ndarray:
+            trans_p = np.array(trans_p)
+        if type(emission_p) is not np.ndarray:
+            emission_p = np.array(emission_p)
+
+        counter = 0
+
+        for rep in self.replica:
+            if rep['processed']:
+                pass
+            else:
+                ignore_list = generate_ignore_list(rep['cmat'], n)
+
+                for i in range(self.n_atoms-1):
+                    for j in range(i+1, self.n_atoms):
+                        if [i, j] in ignore_list[0]:
+                            rep['cmat'][:, i, j] = 0
+                        elif [i, j] in ignore_list[1]:
+                            rep['cmat'][:, i, j] = 1
+                        else:
+                            counter += 1
+                            rep['cmat'][:, i, j] =\
+                                viterbi(rep['cmat'][:, i, j],
+                                        states, start_p,
+                                        trans_p, emission_p)
+
+                # Mark that this replica's contact matrix
+                # has been processed.
+                rep['processed'] = True
+
+                # After processing, locate all frames at which a
+                # transition occurred and store it into `self.frames`
+                self._find_transition_frames()
+
+        print("{} iterations of Viterbi algorithm.".format(counter))
         return
 
     def _generate_pairs(self):
@@ -317,94 +433,6 @@ class Network:
                               "Network.set_cutoff() and then rerun " +
                               "Network.generate_contact_matrix().")
 
-    def set_cutoff(self, atoms, cutoff):
-        """Assigns the cutoff for a pair of atoms.
-
-        Parameters
-        ----------
-        atoms : list of str
-            List containing two elemental symbols as strings.
-        cutoff : float
-            Cutoff value for the two elements in `atoms`.
-        """
-        self._cutoff[frozenset(atoms)] = cutoff
-        return
-
-    def decode(self, n=10, states=[0, 1], start_p=[0.5, 0.5],
-               trans_p=[[0.999, 0.001], [0.001, 0.999]],
-               emission_p=[[0.60, 0.40], [0.40, 0.60]]):
-        """Uses Viterbi algorithm to clean the signal for each bond.
-
-        Prior to processing each individual index in the contact
-        matrix, an ignore list is constructed to reduce the number of
-        times the Viterbi algorithm needs to be executed. If at any
-        given index in the contact matrix there are more than `n`
-        occurrences of the least common value at that index, then the
-        signal for that index will be processed with the Viterbi
-        algorithm.
-
-        Parameters
-        ----------
-        n : int
-            Threshold for determining if a bond should be decoded. If a
-            bond has more than `n` occurrences of the least common
-            state, then it will be processed with the Viterbi algorithm.
-        states : list of int, optional
-            Numerical representations of the states in the system.
-            Default is [0, 1].
-        start_p : list of float, optional
-            Probabilities of starting in a particular hidden state.
-            Default is [0.5, 0.5].
-        trans_p : list of list of float, optional
-            Probabilities of transitioning from one hidden state to
-            another. Default is [[0.999, 0.001], [0.001, 0.999]].
-        emission_p : list of of list of float, optional
-            Probabilities of emitting an observable given the present
-            hidden state.
-        """
-        for rep in self.replica:
-            assert rep['cmat'] is not None,\
-                "Not all contact matrices have been generated."
-
-        # Convert HMM parameters to ndarrays.
-        if type(states) is not np.ndarray:
-            states = np.array(states)
-        if type(start_p) is not np.ndarray:
-            start_p = np.array(start_p)
-        if type(trans_p) is not np.ndarray:
-            trans_p = np.array(trans_p)
-        if type(emission_p) is not np.ndarray:
-            emission_p = np.array(emission_p)
-
-        counter = 0
-
-        for rep in self.replica:
-            if rep['processed']:
-                pass
-            else:
-                ignore_list = generate_ignore_list(rep['cmat'], n)
-
-                for i in range(self.n_atoms-1):
-                    for j in range(i+1, self.n_atoms):
-                        if [i, j] in ignore_list[0]:
-                            rep['cmat'][:, i, j] = 0
-                        elif [i, j] in ignore_list[1]:
-                            rep['cmat'][:, i, j] = 1
-                        else:
-                            counter += 1
-                            rep['cmat'][:, i, j] = viterbi(rep['cmat'][:, i, j],
-                                                           states, start_p,
-                                                           trans_p, emission_p)
-
-                # Track that this replica's contact
-                # matrix has been processed.
-                rep['processed'] = True
-
-                self._find_transition_frames()
-
-        print("{} iterations of Viterbi algorithm.".format(counter))
-        return
-
     def _find_transition_frames(self):
         """Finds transitions in the processed contact matrix.
 
@@ -419,8 +447,8 @@ class Network:
         AssertionError
             If any contact matrices have not been processed yet.
         AssertionError
-            If the number of empty lists in frames is less than the
-            number of replicas.
+            If the number of empty lists in `self.frames` is less than
+            the number of replicas.
         """
 
         for rep in self.replica:
@@ -438,4 +466,8 @@ class Network:
                     pass
                 else:
                     self.frames[rep_id].append(f)
+        return
+
+    def build_network(self):
+
         return

@@ -309,7 +309,7 @@ def uniqueSMILES(smiles_list):
             unique.append(smi)
     return unique
 
-def SMILEStofile(smiles, filename, fit_image, show=False):
+def SMILEStofile(smiles, filename, fit_image, size=(400, 400), show=False):
     """Saves image of 2D structure of SMILES string.
 
     Parameters
@@ -321,13 +321,13 @@ def SMILEStofile(smiles, filename, fit_image, show=False):
         save to file.
     """
     mol = Chem.MolFromSmiles(smiles)
-    Draw.MolToFile(mol, filename, fitImage=fit_image)
+    Draw.MolToFile(mol, filename, size=size, fitImage=fit_image)
     if show:
         Draw.MolToImage(mol)
     return
 
-def SMILESlisttofile(smiles_list, location="SMILESimages", bondlinewidth=2.0,
-                     atomlabelfontsize=16, fit_image=True):
+def SMILESlisttofile(smiles_list, location="SMILESimages", size=(400, 400),
+                     bondlinewidth=2.0, atomlabelfontsize=16, fit_image=True):
     """Saves images of a list of SMILES strings to a specified folder.
 
     Parameters
@@ -350,5 +350,6 @@ def SMILESlisttofile(smiles_list, location="SMILESimages", bondlinewidth=2.0,
     DrawingOptions.atomLabelFontSize = atomlabelfontsize
 
     for smi in smiles_list:
-        SMILEStofile(smi, os.path.join(location,smi+'.png'), fit_image)
+        SMILEStofile(smi, os.path.join(location,smi+'.png'), fit_image,
+                     size=size)
     return

@@ -1,10 +1,14 @@
+import os
+import os.path 
 import numpy as np
 from rdkit import Chem, DataStructs
+from rdkit.Chem import Draw
+from rdkit.Chem.Draw import DrawingOptions
 from rdkit.Chem.Fingerprints import FingerprintMols
 
 __all__ = ['issameSMILES', 'isinSMILESlist', 'differentstrings',
            'replaceSMILES', 'swapconformerSMILES', 'reduceSMILES',
-           'uniqueSMILES', 'SMILEStoimage']
+           'uniqueSMILES', 'SMILEStofile', 'SMILESlisttofile']
 
 
 def issameSMILES(smiles1, smiles2):
@@ -273,12 +277,12 @@ def reduceSMILES(smiles_list):
     reduced_smiles = []
 
     for i, smi in enumerate(smiles_list):
-	if i == 0:
-	    reduced_smiles.append(smi)
-	elif issameSMILES(smi, smiles_list[i-1]):
-	    pass
-	else:
-	    reduced_smiles.append(smi)
+        if i == 0:
+            reduced_smiles.append(smi)
+        elif issameSMILES(smi, smiles_list[i-1]):
+            pass
+        else:
+            reduced_smiles.append(smi)
 
     return reduced_smiles
 
@@ -301,12 +305,12 @@ def uniqueSMILES(smiles_list):
     unique = []
 
     for smi in smiles_list:
-	if not isinSMILESlist(smi, unique):
-	    unique.append(smi)
+        if not isinSMILESlist(smi, unique):
+            unique.append(smi)
     return unique
 
-def SMILEStofile(smiles, filename, show=False):
-    """Saves 2D structure of SMILES string.
+def SMILEStofile(smiles, filename, fit_image, show=False):
+    """Saves image of 2D structure of SMILES string.
 
     Parameters
     ----------
@@ -317,7 +321,34 @@ def SMILEStofile(smiles, filename, show=False):
         save to file.
     """
     mol = Chem.MolFromSmiles(smiles)
-    Draw.MolToFile(mol, filename)
+    Draw.MolToFile(mol, filename, fitImage=fit_image)
     if show:
         Draw.MolToImage(mol)
+    return
+
+def SMILESlisttofile(smiles_list, location="SMILESimages", bondlinewidth=2.0,
+                     atomlabelfontsize=16, fit_image=True):
+    """Saves images of a list of SMILES strings to a specified folder.
+
+    Parameters
+    ----------
+    smiles_list : list of str
+    location : str
+        Folder name to save all generated images into.
+    bondlinewidth : float or int
+        Controls width of bond lines when drawing 2D structures of
+        SMILES strings.
+    atomlabelfontsize : float or int
+        Controls the font size of all atom labels when drawing 2D
+        structures of SMILES strings.
+    """
+
+    os.system("rm -rf " + location)
+    os.system("mkdir " + location)
+
+    DrawingOptions.bondLineWidth = bondlinewidth
+    DrawingOptions.atomLabelFontSize = atomlabelfontsize
+
+    for smi in smiles_list:
+        SMILEStofile(smi, os.path.join(location,smi+'.png'), fit_image)
     return

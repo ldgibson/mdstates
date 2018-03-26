@@ -1,8 +1,12 @@
+import re
 import os
+import warnings
 
 import mdtraj as md
 import networkx as nx
+from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
+import pybel
 
 from .data import bonds
 from .hmm import generate_ignore_list, viterbi
@@ -77,7 +81,7 @@ class Network:
                     "A trajectory from that location is already loaded."
 
         self.replica.append({'traj': None, 'cmat': None, 'path': None,
-                             'processed': False})
+                             'processed': False, 'network': None})
 
         self.replica[-1]['traj'] = md.load(trajectory, top=topology,
                                            **kwargs)
@@ -471,25 +475,81 @@ class Network:
                     self.frames[rep_id].append(f)
         return
 
-    def build_network(self, smiles_list):
-        network = nx.Dinetworkraph()
+    def generate_SMILES(self, rep_id, tol=2):
+        """Generates list of SMILES strings from trajectory.
+
+        Parameters
+        ----------
+        rep_id : int
+            Replica identifier.
+        tol : int, optional
+            Trajectory frames that are +/- `tol` frames from transition
+            frames will be converted to SMILES strings. Default is 2.
+
+        Returns
+        -------
+        smiles : list of str
+            List of SMILES strings compiled from all trajectory frames
+            within the specified tolerance of transition frames.
+        """
+        
+        warnings.warn("The only acceptable file format is XYZ from CP2K.",
+                      RuntimeWarning)
+        
+        frames = self.frames[rep_id].copy()
+        frames.insert(0, 0)
+
+        smiles = []
+
+        for mol in pybel.readfile("xyz", self.replica[rep_id]['path']):
+            n_frame = int(re.findall("\d+", mol.title.split(',')[0])[0]) // 100
+            if np.isclose(n_frame, frames, atol=2).any():
+                smiles.append(mol.write("smiles").split('\t')[0])
+            else:
+                pass
+        return smiles
+
+    def build_network(self, smiles_list, image_loc="SMILESimages"):
+        """Builds the network from a list of SMILES strings.
+
+        Parameters
+        ----------
+        smiles_list : list of str
+        image_loc : str, optional
+            Location of the folder containing all 2D SMILES structures.
+
+        Returns
+        -------
+        network : networkx.DiGraph
+        """
+        network = nx.DiGraph()
 
         for i, smi in enumerate(smiles_list):
+            # If the current SMILES string is missing in the network
+            # graph, then add it.
             if not isinSMILESlist(smi, list(network.nodes)):
+                # If the graph is empty, then add first node.
                 if not network.nodes:
                     network.add_node(smi, rank=0, label="",
-                                     image=os.path.join('smilespics',
+                                     image=os.path.join(image_loc,
                                                         smi+'.png'))
                 else:
+                    # If this node and the previous node were
+                    # connected before, then add to that edge.
                     if isinSMILESlist((smiles_list[i-1], smi),
                                       list(network.out_edges),
                                       tuples=True):
                         network.edges[smiles_list[i-1], smi]['penwidth'] += 1
+
+                    # If this node is new, add the node with its
+                    # image and connect this node with the previous
+                    # one.
                     else:
                         network.add_node(smi, label="",
-                                         image=os.path.join('smilespics',
+                                         image=os.path.join(image_loc,
                                                             smi+'.png'))
                         network.add_edge(smiles_list[i-1], smi, penwidth=1.0)
+            # If the current SMILES string is present in the network.
             else:
                 if isinSMILESlist((smiles_list[i-1], smi),
                                   list(network.out_edges),
@@ -498,3 +558,21 @@ class Network:
                 else:
                     network.add_edge(smiles_list[i-1], smi, penwidth=1.0)
         return network
+
+    def draw_network(self, graph, filename, layout="dot"):
+        pygraph = to_agraph(graph)
+        pygraph.layout(layout)
+        pygraph.draw(filename)
+        return
+
+    def graph_network(self):
+        for rep_id, rep in enumerate(self.replica):
+            smiles = self.generate_SMILES(rep_id)
+            reduced = reduceSMILES(smiles)
+            swapconformerSMILES(reduced)
+            unique = uniqueSMILES(reduced)
+            SMILESlisttofile(unique)
+            G = self.build_network(reduced)
+            self.draw_network(G, 'network' + str(rep_id) + '.png')
+        return
+

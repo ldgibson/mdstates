@@ -1,8 +1,12 @@
+import os
+
 import mdtraj as md
+import networkx as nx
 import numpy as np
 
 from .data import bonds
 from .hmm import generate_ignore_list, viterbi
+from .smiles import *  # noqa
 
 
 class Network:
@@ -39,7 +43,7 @@ class Network:
     def addreplica(self, trajectory, topology, **kwargs):
         """
         Adds a replica to the class object.
-        
+
         Loads a trajectory into the `replica` attribute. Also adds an
         emtpy list to `frames` attribute. On the first replica added,
         attributes `n_atoms` and `atoms` are loaded from the topology
@@ -443,9 +447,8 @@ class Network:
         Raises
         ------
         AssertionError
-            If any contact matrices have not been constructed yet.
-        AssertionError
-            If any contact matrices have not been processed yet.
+            If any contact matrices have not been constructed or
+            processed yet.
         AssertionError
             If the number of empty lists in `self.frames` is less than
             the number of replicas.
@@ -468,6 +471,30 @@ class Network:
                     self.frames[rep_id].append(f)
         return
 
-    def build_network(self):
+    def build_network(self, smiles_list):
+        network = nx.Dinetworkraph()
 
-        return
+        for i, smi in enumerate(smiles_list):
+            if not isinSMILESlist(smi, list(network.nodes)):
+                if not network.nodes:
+                    network.add_node(smi, rank=0, label="",
+                                     image=os.path.join('smilespics',
+                                                        smi+'.png'))
+                else:
+                    if isinSMILESlist((smiles_list[i-1], smi),
+                                      list(network.out_edges),
+                                      tuples=True):
+                        network.edges[smiles_list[i-1], smi]['penwidth'] += 1
+                    else:
+                        network.add_node(smi, label="",
+                                         image=os.path.join('smilespics',
+                                                            smi+'.png'))
+                        network.add_edge(smiles_list[i-1], smi, penwidth=1.0)
+            else:
+                if isinSMILESlist((smiles_list[i-1], smi),
+                                  list(network.out_edges),
+                                  tuples=True):
+                    network.edges[smiles_list[i-1], smi]['penwidth'] += 1
+                else:
+                    network.add_edge(smiles_list[i-1], smi, penwidth=1.0)
+        return network

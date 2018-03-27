@@ -631,7 +631,7 @@ class Network:
 
     def draw_network(self, nxgraph, filename, layout="dot"):
         pygraph = to_agraph(nxgraph)
-        pygraph.graph_attr['concentrate'] = 'true'
+        # pygraph.graph_attr['concentrate'] = 'true'
         pygraph.layout(layout)
         pygraph.draw(filename)
         return

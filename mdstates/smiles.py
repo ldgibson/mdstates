@@ -1,5 +1,7 @@
 import os
 import os.path 
+import warnings
+
 import numpy as np
 from rdkit import Chem, DataStructs
 from rdkit.Chem import Draw
@@ -327,8 +329,9 @@ def SMILEStofile(smiles, filename, fit_image, size=(400, 400), show=False):
         Draw.MolToImage(mol)
     return
 
-def allrepsSMILES(smiles_list, location="SMILESimages", size=(400, 400),
-                  bondlinewidth=2.0, atomlabelfontsize=16, fit_image=True):
+def saveSMILESimages(smiles_list, location="SMILESimages", size=(400, 400),
+                     bondlinewidth=2.0, atomlabelfontsize=16, fit_image=True,
+                     rewrite=False):
     """Saves images of a list of SMILES strings to a specified folder.
 
     Parameters
@@ -336,28 +339,40 @@ def allrepsSMILES(smiles_list, location="SMILESimages", size=(400, 400),
     smiles_list : list of str
     location : str
         Folder name to save all generated images into.
+    size : tuple of int
+        Controls the image size in pixels.
     bondlinewidth : float or int
         Controls width of bond lines when drawing 2D structures of
         SMILES strings.
     atomlabelfontsize : float or int
         Controls the font size of all atom labels when drawing 2D
         structures of SMILES strings.
+    fit_image : bool
+        If `True`, an attempt is made to fill the image space with the
+        image to prevent excessive white space around edges.
+    rewrite : bool
+        If `True`, the location of SMILES structures will be removed
+        and rewritten. If `False`, files will not be overwritten if
+        they already exist.
     """
 
-    # os.system("rm -rf " + location)
-    if not os.path.exists(location):
+    if rewrite:
+        os.system("rm -rf " + location)
         os.system("mkdir " + location)
     else:
-        pass
+        if not os.path.exists(location):
+            os.system("mkdir " + location)
+        else:
+            pass
 
     DrawingOptions.bondLineWidth = bondlinewidth
     DrawingOptions.atomLabelFontSize = atomlabelfontsize
 
     for smi in smiles_list:
-        if os.path.exists(os.path.join(location,smi+'.png')):
+        if os.path.exists(os.path.join(location, smi + '.png')):
             pass
         else:
-            SMILEStofile(smi, os.path.join(location,smi+'.png'), fit_image,
+            SMILEStofile(smi, os.path.join(location, smi + '.png'), fit_image,
                          size=size)
     return
 
@@ -377,6 +392,9 @@ def SMILESlisttofile(smiles_list, location="SMILESimages", size=(400, 400),
         Controls the font size of all atom labels when drawing 2D
         structures of SMILES strings.
     """
+
+    warnings.warn("This function is deprecated. " +
+                  "Use `saveSMILESimages` instead", DeprecationWarning)
 
     os.system("rm -rf " + location)
     os.system("mkdir " + location)

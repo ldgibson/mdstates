@@ -15,9 +15,9 @@ def combined_graph_edges(G, H):
             hdata = H[u][v]
             attr.update((key, attr[key] + hdata[key]) for key in attr.keys())
         elif (u, v) in G.edges:
-            attr = G[u][v].copy()
+            attr = G[u][v]
         else:
-            attr = H[u][v].copy()
+            attr = H[u][v]
 
         yield u, v, attr
 

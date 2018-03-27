@@ -558,6 +558,11 @@ class Network:
                 else:
                     network.add_edge(smiles_list[i - 1], smi, penwidth=1.0)
         return network
+    
+    def allnetworks(self):
+        """Builds networks for all replicas and combines them."""
+
+        return
 
     def allrepsnetwork(self, image_loc="SMILESimages"):
         network = nx.DiGraph()

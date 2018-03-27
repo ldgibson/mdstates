@@ -12,6 +12,8 @@ from .data import bonds
 from .hmm import generate_ignore_list, viterbi
 from .smiles import *  # noqa
 
+__all__ = ['Network']
+
 
 class Network:
     """
@@ -39,6 +41,7 @@ class Network:
         self.n_atoms = None
         self.pbc = True
         self.frames = []
+        self.network = None
 
         self._pairs = []
         self._cutoff = {}
@@ -230,8 +233,8 @@ class Network:
             else:
                 ignore_list = generate_ignore_list(rep['cmat'], n)
 
-                for i in range(self.n_atoms-1):
-                    for j in range(i+1, self.n_atoms):
+                for i in range(self.n_atoms - 1):
+                    for j in range(i + 1, self.n_atoms):
                         if [i, j] in ignore_list[0]:
                             rep['cmat'][:, i, j] = 0
                         elif [i, j] in ignore_list[1]:
@@ -247,9 +250,9 @@ class Network:
                 # has been processed.
                 rep['processed'] = True
 
-                # After processing, locate all frames at which a
-                # transition occurred and store it into `self.frames`
-                self._find_transition_frames()
+        # After processing, locate all frames at which a
+        # transition occurred and store it into `self.frames`
+        self._find_transition_frames()
 
         print("{} iterations of Viterbi algorithm.".format(counter))
         return
@@ -258,8 +261,8 @@ class Network:
         """
         Generates the atom pairs for interatomic distance calculations.
         """
-        for i in range(self.n_atoms-1):
-            for j in range(i+1, self.n_atoms):
+        for i in range(self.n_atoms - 1):
+            for j in range(i + 1, self.n_atoms):
                 self._pairs.append([i, j])
         return
 
@@ -287,7 +290,7 @@ class Network:
         AssertionError
             If the atom pairs have not been determined.
         """
-        if rep_id < len(self.replica) - 1:
+        if rep_id > len(self.replica) - 1:
             raise IndexError(str(rep_id) + " is outside of index range.")
         assert self.replica[rep_id]['traj'],\
             "Trajectory does not exist."
@@ -319,20 +322,17 @@ class Network:
 
         Example
         -------
-            >>> foo = np.array([[1, 2, 3],
-                                [4, 5, 6]])
-
-            >>> bar = self._reshape_to_square(foo)
-
-            >>> bar[0, :, :]
-            array([[0, 1, 2],
-                   [0, 0, 3],
-                   [0, 0, 0]])
-
-            >>> bar[1, :, :]
-            array([[0, 4, 5],
-                   [0, 0, 6],
-                   [0, 0, 0]])
+        >>> foo = np.array([[1, 2, 3],
+        ...                 [4, 5, 6]])
+        >>> bar = self._reshape_to_square(foo)
+        >>> bar[0, :, :]  # first frame
+        array([[0, 1, 2],
+               [0, 0, 3],
+               [0, 0, 0]])
+        >>> bar[1, :, :]  # second frame
+        array([[0, 4, 5],
+               [0, 0, 6],
+               [0, 0, 0]])
         """
         frames = linear_matrix.shape[0]
         square_matrix = np.zeros((frames, self.n_atoms, self.n_atoms))
@@ -363,8 +363,8 @@ class Network:
 
         cmat = np.zeros((frames, self.n_atoms, self.n_atoms), dtype=int)
 
-        for i in range(self.n_atoms-1):
-            for j in range(i+1, self.n_atoms):
+        for i in range(self.n_atoms - 1):
+            for j in range(i + 1, self.n_atoms):
                 atom1 = self.atoms[i]
                 atom2 = self.atoms[j]
                 cmat[:, i, j] =\
@@ -428,8 +428,8 @@ class Network:
             If the atom pair is not present in the database.
         """
         pair = []
-        pair.append(str(atom1)+'-'+str(atom2))
-        pair.append(str(atom2)+'-'+str(atom1))
+        pair.append(str(atom1) + '-' + str(atom2))
+        pair.append(str(atom2) + '-' + str(atom1))
         loc_bool = [x in bonds.index for x in pair]
         if any(loc_bool):
             idx = loc_bool.index(True)
@@ -469,7 +469,7 @@ class Network:
 
         for rep_id, rep in enumerate(self.replica):
             for f in range(1, rep['cmat'].shape[0]):
-                if (rep['cmat'][f, :, :] == rep['cmat'][f-1, :, :]).all():
+                if (rep['cmat'][f, :, :] == rep['cmat'][f - 1, :, :]).all():
                     pass
                 else:
                     self.frames[rep_id].append(f)
@@ -492,10 +492,10 @@ class Network:
             List of SMILES strings compiled from all trajectory frames
             within the specified tolerance of transition frames.
         """
-        
+
         warnings.warn("The only acceptable file format is XYZ from CP2K.",
                       RuntimeWarning)
-        
+
         frames = self.frames[rep_id].copy()
         frames.insert(0, 0)
 
@@ -532,14 +532,14 @@ class Network:
                 if not network.nodes:
                     network.add_node(smi, rank=0, label="",
                                      image=os.path.join(image_loc,
-                                                        smi+'.png'))
+                                                        smi + '.png'))
                 else:
                     # If this node and the previous node were
                     # connected before, then add to that edge.
-                    if isinSMILESlist((smiles_list[i-1], smi),
+                    if isinSMILESlist((smiles_list[i - 1], smi),
                                       list(network.out_edges),
                                       tuples=True):
-                        network.edges[smiles_list[i-1], smi]['penwidth'] += 1
+                        network.edges[smiles_list[i - 1], smi]['penwidth'] += 1
 
                     # If this node is new, add the node with its
                     # image and connect this node with the previous
@@ -547,20 +547,68 @@ class Network:
                     else:
                         network.add_node(smi, label="",
                                          image=os.path.join(image_loc,
-                                                            smi+'.png'))
-                        network.add_edge(smiles_list[i-1], smi, penwidth=1.0)
+                                                            smi + '.png'))
+                        network.add_edge(smiles_list[i - 1], smi, penwidth=1.0)
             # If the current SMILES string is present in the network.
             else:
-                if isinSMILESlist((smiles_list[i-1], smi),
+                if isinSMILESlist((smiles_list[i - 1], smi),
                                   list(network.out_edges),
                                   tuples=True):
-                    network.edges[smiles_list[i-1], smi]['penwidth'] += 1
+                    network.edges[smiles_list[i - 1], smi]['penwidth'] += 1
                 else:
-                    network.add_edge(smiles_list[i-1], smi, penwidth=1.0)
+                    network.add_edge(smiles_list[i - 1], smi, penwidth=1.0)
         return network
 
-    def draw_network(self, graph, filename, layout="dot"):
-        pygraph = to_agraph(graph)
+    def allrepsnetwork(self, image_loc="SMILESimages"):
+        network = nx.DiGraph()
+
+        for rep_id, rep in enumerate(self.replica):
+            smiles_list = self.generate_SMILES(rep_id)
+            smiles_list = reduceSMILES(smiles_list)
+            swapconformerSMILES(smiles_list)
+            unique = uniqueSMILES(smiles_list)
+            allrepsSMILES(unique)
+
+            for i, smi in enumerate(smiles_list):
+                # If the current SMILES string is missing in the network
+                # graph, then add it.
+                if not isinSMILESlist(smi, list(network.nodes)):
+                    # If the graph is empty, then add first node.
+                    if not network.nodes:
+                        network.add_node(smi, rank=0, label="",
+                                         image=os.path.join(image_loc,
+                                                            smi + '.png'))
+                    else:
+                        # If this node and the previous node were
+                        # connected before, then add to that edge.
+                        if isinSMILESlist((smiles_list[i - 1], smi),
+                                          list(network.out_edges),
+                                          tuples=True):
+                            network.edges[smiles_list[i - 1],
+                                          smi]['penwidth'] += 1
+
+                        # If this node is new, add the node with its
+                        # image and connect this node with the previous
+                        # one.
+                        else:
+                            network.add_node(smi, label="",
+                                             image=os.path.join(image_loc,
+                                                                smi + '.png'))
+                            network.add_edge(smiles_list[i - 1], smi,
+                                             penwidth=1.0)
+                # If the current SMILES string is present in the network.
+                else:
+                    if isinSMILESlist((smiles_list[i - 1], smi),
+                                      list(network.out_edges),
+                                      tuples=True):
+                        network.edges[smiles_list[i - 1], smi]['penwidth'] += 1
+                    else:
+                        network.add_edge(smiles_list[i - 1], smi, penwidth=1.0)
+        self.draw_network(network, 'allrepsnetwork.png')
+        return
+
+    def draw_network(self, nxgraph, filename, layout="dot"):
+        pygraph = to_agraph(nxgraph)
         pygraph.layout(layout)
         pygraph.draw(filename)
         return
@@ -575,4 +623,3 @@ class Network:
             G = self.build_network(reduced)
             self.draw_network(G, 'network' + str(rep_id) + '.png')
         return
-

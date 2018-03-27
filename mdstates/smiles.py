@@ -8,7 +8,8 @@ from rdkit.Chem.Fingerprints import FingerprintMols
 
 __all__ = ['issameSMILES', 'isinSMILESlist', 'differentstrings',
            'replaceSMILES', 'swapconformerSMILES', 'reduceSMILES',
-           'uniqueSMILES', 'SMILEStofile', 'SMILESlisttofile']
+           'uniqueSMILES', 'SMILEStofile', 'SMILESlisttofile',
+           'allrepsSMILES']
 
 
 def issameSMILES(smiles1, smiles2):
@@ -324,6 +325,40 @@ def SMILEStofile(smiles, filename, fit_image, size=(400, 400), show=False):
     Draw.MolToFile(mol, filename, size=size, fitImage=fit_image)
     if show:
         Draw.MolToImage(mol)
+    return
+
+def allrepsSMILES(smiles_list, location="SMILESimages", size=(400, 400),
+                  bondlinewidth=2.0, atomlabelfontsize=16, fit_image=True):
+    """Saves images of a list of SMILES strings to a specified folder.
+
+    Parameters
+    ----------
+    smiles_list : list of str
+    location : str
+        Folder name to save all generated images into.
+    bondlinewidth : float or int
+        Controls width of bond lines when drawing 2D structures of
+        SMILES strings.
+    atomlabelfontsize : float or int
+        Controls the font size of all atom labels when drawing 2D
+        structures of SMILES strings.
+    """
+
+    # os.system("rm -rf " + location)
+    if not os.path.exists(location):
+        os.system("mkdir " + location)
+    else:
+        pass
+
+    DrawingOptions.bondLineWidth = bondlinewidth
+    DrawingOptions.atomLabelFontSize = atomlabelfontsize
+
+    for smi in smiles_list:
+        if os.path.exists(os.path.join(location,smi+'.png')):
+            pass
+        else:
+            SMILEStofile(smi, os.path.join(location,smi+'.png'), fit_image,
+                         size=size)
     return
 
 def SMILESlisttofile(smiles_list, location="SMILESimages", size=(400, 400),

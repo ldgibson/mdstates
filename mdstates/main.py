@@ -9,6 +9,7 @@ import numpy as np
 import pybel
 
 from .data import bonds
+from .graphs import *  # noqa
 from .hmm import generate_ignore_list, viterbi
 from .smiles import *  # noqa
 
@@ -523,6 +524,7 @@ class Network:
         network : networkx.DiGraph
         """
         network = nx.DiGraph()
+        # network.graph['concentrate'] = 'true'
 
         for i, smi in enumerate(smiles_list):
             # If the current SMILES string is missing in the network
@@ -562,6 +564,21 @@ class Network:
     def allnetworks(self):
         """Builds networks for all replicas and combines them."""
 
+        networks = []
+        for rep_id in range(len(self.replica)):
+            smiles_list = self.generate_SMILES(rep_id)
+            smiles_list = reduceSMILES(smiles_list)
+            swapconformerSMILES(smiles_list)
+            unique = uniqueSMILES(smiles_list)
+            allrepsSMILES(unique)
+
+            networks.append(self.build_network(smiles_list))
+        
+        overall_network = nx.Graph()
+        for net in networks:
+            overall_network = combine_graphs(overall_network, net)
+
+        self.draw_network(overall_network, 'overall.png')
         return
 
     def allrepsnetwork(self, image_loc="SMILESimages"):
@@ -614,6 +631,7 @@ class Network:
 
     def draw_network(self, nxgraph, filename, layout="dot"):
         pygraph = to_agraph(nxgraph)
+        pygraph.graph_attr['concentrate'] = 'true'
         pygraph.layout(layout)
         pygraph.draw(filename)
         return

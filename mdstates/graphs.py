@@ -23,7 +23,7 @@ def combined_graph_edges(G, H):
 
 
 def combine_graphs(G, H):
-    graph = nx.Graph()
+    graph = nx.DiGraph()
     graph.add_nodes_from(G.nodes(data=True))
     graph.add_nodes_from(node for node in H.nodes(data=True)
                          if node not in G.nodes(data=True))

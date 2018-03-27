@@ -10,3 +10,4 @@ gen_api/
 mdstates.egg-info/
 */.ipynb_checkpoints/
 examples/*/.ipynb_checkpoints/
+examples/

@@ -536,7 +536,6 @@ class Network:
         network : networkx.DiGraph
         """
         network = nx.DiGraph()
-        # network.graph['concentrate'] = 'true'
 
         for i, smi in enumerate(smiles_list):
             # If the current SMILES string is missing in the network
@@ -544,29 +543,24 @@ class Network:
             if not isinSMILESlist(smi, list(network.nodes)):
                 # If the graph is empty, then add first node.
                 if not network.nodes:
-                    network.add_node(smi, label="",
-                                     image=os.path.join(image_loc,
-                                                        smi + '.png'),
-                                     fingerprint=SMILESfingerprint(smi))
+                    network.add_node(smi, fingerprint=SMILESfingerprint(smi),
+                                     count=1)
                 else:
                     # If this node and the previous node were
                     # connected before, then add to that edge.
                     if isinSMILESlist((smiles_list[i - 1], smi),
                                       list(network.out_edges),
                                       tuples=True):
-                        network.edges[smiles_list[i - 1],
-                                      smi]['data']['count'] += 1
 
-                    # If this node is new, add the node with its
-                    # image and connect this node with the previous
-                    # one.
+                        network.edges[smiles_list[i - 1], smi]['count'] += 1
+
+                    # If this node is new, add the node and connect it
+                    # with the previous one.
                     else:
-                        network.add_node(smi, label="",
-                                         image=os.path.join(image_loc,
-                                                            smi + '.png'),
+                        network.add_node(smi,
                                          fingerprint=SMILESfingerprint(smi))
-                        network.add_edge(smiles_list[i - 1], smi,
-                                         data=dict(count=1.0))
+                        network.add_edge(smiles_list[i - 1], smi, count=1)
+
             # If the current SMILES string is present in the network.
             else:
                 if isinSMILESlist((smiles_list[i - 1], smi),
@@ -574,8 +568,7 @@ class Network:
                                   tuples=True):
                     network.edges[smiles_list[i - 1], smi]['count'] += 1
                 else:
-                    network.add_edge(smiles_list[i - 1], smi,
-                                     data=dict(count=1.0))
+                    network.add_edge(smiles_list[i - 1], smi, count=1)
         return network
     
     def drawfinalnetwork(self):

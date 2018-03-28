@@ -3,15 +3,16 @@ import os.path
 import warnings
 
 import numpy as np
-from rdkit import Chem, DataStructs
+from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.Draw import DrawingOptions
-from rdkit.Chem.Fingerprints import FingerprintMols
+from rdkit.Chem.Fingerprints.FingerprintMols import FingerprintMol
+from rdkit.DataStructs import FingerprintSimilarity as fpsimilarity
 
 __all__ = ['issameSMILES', 'isinSMILESlist', 'differentstrings',
            'replaceSMILES', 'swapconformerSMILES', 'reduceSMILES',
            'uniqueSMILES', 'SMILEStofile', 'SMILESlisttofile',
-           'allrepsSMILES']
+           'save_unique_SMILES', 'SMILESfingerprint']
 
 
 def issameSMILES(smiles1, smiles2):
@@ -406,3 +407,14 @@ def SMILESlisttofile(smiles_list, location="SMILESimages", size=(400, 400),
         SMILEStofile(smi, os.path.join(location,smi+'.png'), fit_image,
                      size=size)
     return
+
+
+def save_unique_SMILES(smiles_list):
+    unique = uniqueSMILES(smiles_list)
+    saveSMILESimages(unique)
+    return
+
+
+def SMILESfingerprint(smiles):
+    mol = Chem.MolFromSmiles(smiles)
+    return FingerprintMol(mol)

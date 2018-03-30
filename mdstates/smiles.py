@@ -7,8 +7,8 @@ import numpy as np
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.Draw import DrawingOptions
-from rdkit.Chem.Fingerprints.FingerprintMols import FingerprintMol
-from rdkit.DataStructs import FingerprintSimilarity as FPSimilarity
+from rdkit.Chem.Fingerprints.FingerprintMols
+from rdkit.DataStructs import FingerprintSimilarity
 
 #__all__ = ['issameSMILES', 'isinSMILESlist', 'differentstrings',
 #           'replaceSMILES', 'swapconformerSMILES', 'reduceSMILES',
@@ -55,6 +55,8 @@ def issameSMILES(smiles1, smiles2):
     else:
         pass
 
+    warnings.warn("This function is deprecated.", DeprecationWarning)
+
     mol1 = Chem.MolFromSmiles(smiles1)
     mol2 = Chem.MolFromSmiles(smiles2)
 
@@ -73,7 +75,7 @@ def issameSMILES(smiles1, smiles2):
     fp1 = FingerprintMol(mol1)
     fp2 = FingerprintMol(mol2)
 
-    similarity = FPSimilarity(fp1, fp2)
+    similarity = DataStructs.FingerprintSimilarity(fp1, fp2)
 
     if np.isclose(similarity, 1):
         return True
@@ -113,6 +115,7 @@ def isinSMILESlist(smiles, smiles_list, tuples=False):
     SyntaxError
         If any of the SMILES strings passed are not valid.
     """
+    warnings.warn("This function is deprecated.", DeprecationWarning)
 
     if not tuples:
         if not smiles:
@@ -203,6 +206,7 @@ def differentstrings(smiles1, smiles2):
     """
     Checks if 2 SMILES strings have same fingerprint but different strings.
     """
+    warnings.warn("This function is deprecated.", DeprecationWarning)
 
     if smiles1 != smiles2 and issameSMILES(smiles1, smiles2):
         return True
@@ -221,6 +225,8 @@ def replaceSMILES(smiles_list, i, smiles):
         Index of entry to be replaced.
     smiles: str
         SMILES string to replace list entry."""
+
+    warnings.warn("This function is deprecated.", DeprecationWarning)
 
     del smiles_list[i]
     smiles_list.insert(i, smiles)
@@ -243,6 +249,8 @@ def swapconformerSMILES(smiles_list, inplace=True):
     -------
     smiles_list : list of str
         Copy of the original argument with replacements made."""
+
+    warnings.warn("This function is deprecated.", DeprecationWarning)
 
     if not inplace:
         smiles_list = smiles_list.copy()
@@ -284,7 +292,7 @@ def reduceSMILES(smiles_list):
     for i, smi in enumerate(smiles_list):
         if i == 0:
             reduced_smiles.append(smi)
-        elif issameSMILES(smi, smiles_list[i-1]):
+        elif smi == smiles_list[i - 1]:
             pass
         else:
             reduced_smiles.append(smi)
@@ -311,7 +319,6 @@ def uniqueSMILES(smiles_list):
 
     for smi in smiles_list:
         if smi not in unique:
-        # if not isinSMILESlist(smi, unique):
             unique.append(smi)
     return unique
 
@@ -419,17 +426,17 @@ def save_unique_SMILES(smiles_list):
 
 def SMILESfingerprint(smiles):
     mol = Chem.MolFromSmiles(smiles)
-    return FingerprintMol(mol)
+    return FingerprintMols.FingerprintMol(mol)
 
 
-def break_ionic_bonds(smiles):
+def _break_ionic_bonds(smiles):
     if isinstance(smiles, str):
         return re.sub("\[Li\]O", "[Li].[O]", smiles)
     elif isinstance(smiles, list):
         return [re.sub("\[Li\]O", "[Li].[O]", smi) for smi in smiles]
 
 
-def radical_to_sp2(smiles):
+def _radical_to_sp2(smiles):
     if isinstance(smiles, str):
         return re.sub("\[C\]\(\[O\]\)", "C(=O)", smiles)
     elif isinstance(smiles, list):

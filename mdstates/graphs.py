@@ -2,6 +2,7 @@ from itertools import chain
 from numbers import Number
 
 import networkx as nx
+from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
 
 __all__ = ['combined_graph_nodes', 'combined_graph_edges', 'combine_graphs']
@@ -59,8 +60,5 @@ def combined_graph_edges(G, H):
 def combine_graphs(G, H):
     graph = nx.DiGraph()
     graph.add_nodes_from(combined_graph_nodes(G, H))
-    # graph.add_nodes_from(G.nodes(data=True))
-    # graph.add_nodes_from(node for node in H.nodes(data=True)
-    #                      if node not in G.nodes(data=True))
     graph.add_edges_from(combined_graph_edges(G, H))
     return graph

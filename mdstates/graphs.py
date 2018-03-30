@@ -117,6 +117,8 @@ def combine_graphs(G, H, directed=True):
     ----------
     G, H : networkx.DiGraph
         Graphs that will be combined.
+    directed : bool, optional
+        If `False`, return an undirected graph. Default is `True`. 
 
     Returns
     -------

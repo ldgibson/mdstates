@@ -1,3 +1,4 @@
+import re
 import os
 import os.path 
 import warnings
@@ -7,12 +8,12 @@ from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.Draw import DrawingOptions
 from rdkit.Chem.Fingerprints.FingerprintMols import FingerprintMol
-from rdkit.DataStructs import FingerprintSimilarity as fpsimilarity
+from rdkit.DataStructs import FingerprintSimilarity as FPSimilarity
 
-__all__ = ['issameSMILES', 'isinSMILESlist', 'differentstrings',
-           'replaceSMILES', 'swapconformerSMILES', 'reduceSMILES',
-           'uniqueSMILES', 'SMILEStofile', 'SMILESlisttofile',
-           'save_unique_SMILES', 'SMILESfingerprint']
+#__all__ = ['issameSMILES', 'isinSMILESlist', 'differentstrings',
+#           'replaceSMILES', 'swapconformerSMILES', 'reduceSMILES',
+#           'uniqueSMILES', 'SMILEStofile', 'SMILESlisttofile',
+#           'save_unique_SMILES', 'SMILESfingerprint']
 
 
 def issameSMILES(smiles1, smiles2):
@@ -69,10 +70,10 @@ def issameSMILES(smiles1, smiles2):
     else:
         pass
 
-    fp1 = FingerprintMols.FingerprintMol(mol1)
-    fp2 = FingerprintMols.FingerprintMol(mol2)
+    fp1 = FingerprintMol(mol1)
+    fp2 = FingerprintMol(mol2)
 
-    similarity = DataStructs.FingerprintSimilarity(fp1, fp2)
+    similarity = FPSimilarity(fp1, fp2)
 
     if np.isclose(similarity, 1):
         return True
@@ -309,7 +310,8 @@ def uniqueSMILES(smiles_list):
     unique = []
 
     for smi in smiles_list:
-        if not isinSMILESlist(smi, unique):
+        if smi not in unique:
+        # if not isinSMILESlist(smi, unique):
             unique.append(smi)
     return unique
 
@@ -418,3 +420,17 @@ def save_unique_SMILES(smiles_list):
 def SMILESfingerprint(smiles):
     mol = Chem.MolFromSmiles(smiles)
     return FingerprintMol(mol)
+
+
+def break_ionic_bonds(smiles):
+    if isinstance(smiles, str):
+        return re.sub("\[Li\]O", "[Li].[O]", smiles)
+    elif isinstance(smiles, list):
+        return [re.sub("\[Li\]O", "[Li].[O]", smi) for smi in smiles]
+
+
+def radical_to_sp2(smiles):
+    if isinstance(smiles, str):
+        return re.sub("\[C\]\(\[O\]\)", "C(=O)", smiles)
+    elif isinstance(smiles, list):
+        return [re.sub("\[C\]\(\[O\]\)", "C(=O)", smi) for smi in smiles]

@@ -1,6 +1,7 @@
 *.pyc
 *~
 *.DS_Store
+.pytest_cache/
 .cache/
 _build/
 build/

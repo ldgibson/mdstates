@@ -443,7 +443,7 @@ class Network:
         loc_bool = [x in bonds.index for x in pair]
         if any(loc_bool):
             idx = loc_bool.index(True)
-            return float(bonds.loc[pair[idx], 'distance']) * 0.10 + 0.02
+            return float(bonds.loc[pair[idx], 'distance']) * 0.13
         else:
             raise LookupError(pair[0] + " was not found in cutoff " +
                               "database. Please manually add it to " +
@@ -485,7 +485,7 @@ class Network:
                     self.frames[rep_id].append(f)
         return
 
-    def generate_SMILES(self, rep_id, tol=2):
+    def generate_SMILES(self, rep_id, tol=2, split_ions=True):
         """Generates list of SMILES strings from trajectory.
 
         Parameters
@@ -514,12 +514,34 @@ class Network:
         for mol in pybel.readfile("xyz", self.replica[rep_id]['path']):
             n_frame = int(re.findall("\d+", mol.title.split(',')[0])[0]) // 100
             if np.isclose(n_frame, frames, atol=2).any():
-                smiles.append(mol.write("smiles").split('\t')[0])
+                # Read in frame and convert to SMILES.
+                pybelsmiles = mol.write("smiles").split('\t')[0]
+
+                # Break any Li-O ionic bonds.
+                pybelsmiles = break_ionic_bonds(pybelsmiles)
+
+                # Change how SMILES is written using RDKit.
+                mol = Chem.MolFromSmiles(pybelsmiles)
+                new_smiles = Chem.MolToSmiles(mol)
+
+                # Change any ternary radial carbons into sp2
+                # hybridization to stay consistent.
+                new_smiles = radical_to_sp2(new_smiles)
+
+                # Change SMILES back into RDKit format.
+                mol = Chem.MolFromSmiles(new_smiles)
+                smiles.append(Chem.MolToSmiles(mol))
+                
             else:
                 pass
 
+        # if split_ions:
+        #     smiles = break_ionic_bonds(smiles)
+        # else:
+        #     pass
+
         smiles = reduceSMILES(smiles)
-        swapconformerSMILES(smiles)
+        #swapconformerSMILES(smiles)
         return smiles
 
     def _build_network(self, smiles_list, image_loc="SMILESimages"):
@@ -535,40 +557,36 @@ class Network:
         -------
         network : networkx.DiGraph
         """
+        
+        save_unique_SMILES(smiles_list)
+
         network = nx.DiGraph()
 
         for i, smi in enumerate(smiles_list):
             # If the current SMILES string is missing in the network
             # graph, then add it.
-            if not isinSMILESlist(smi, list(network.nodes)):
+            if smi in list(network.nodes):
+            # if not isinSMILESlist(smi, list(network.nodes)):
                 # If the graph is empty, then add first node.
                 if not network.nodes:
                     network.add_node(smi, fingerprint=SMILESfingerprint(smi),
-                                     count=1)
+                                     count=1, traj_count=1)
                 else:
-                    # If this node and the previous node were
-                    # connected before, then add to that edge.
-                    if isinSMILESlist((smiles_list[i - 1], smi),
-                                      list(network.out_edges),
-                                      tuples=True):
-
-                        network.edges[smiles_list[i - 1], smi]['count'] += 1
-
-                    # If this node is new, add the node and connect it
-                    # with the previous one.
-                    else:
-                        network.add_node(smi,
-                                         fingerprint=SMILESfingerprint(smi))
-                        network.add_edge(smiles_list[i - 1], smi, count=1)
+                    network.add_node(smi, fingerprint=SMILESfingerprint(smi),
+                                     count=1, traj_count=1)
+                    network.add_edge(smiles_list[i - 1], smi, count=1,
+                                     traj_count=1)
 
             # If the current SMILES string is present in the network.
             else:
-                if isinSMILESlist((smiles_list[i - 1], smi),
-                                  list(network.out_edges),
-                                  tuples=True):
+                if (smiles_list[i - 1], smi) in list(network.out_edges):
+                # if isinSMILESlist((smiles_list[i - 1], smi),
+                #                   list(network.out_edges),
+                #                   tuples=True):
                     network.edges[smiles_list[i - 1], smi]['count'] += 1
                 else:
-                    network.add_edge(smiles_list[i - 1], smi, count=1)
+                    network.add_edge(smiles_list[i - 1], smi, count=1,
+                                     traj_count=1)
         return network
     
     def drawfinalnetwork(self):

@@ -2,13 +2,14 @@ from itertools import chain
 from numbers import Number
 
 import networkx as nx
-from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
 
-__all__ = ['combined_graph_nodes', 'combined_graph_edges', 'combine_graphs']
+from .util import Scaler
+
+#__all__ = ['combined_graph_nodes', 'combined_graph_edges', 'combine_graphs']
 
 
-def combined_graph_nodes(G, H):
+def _combined_graph_nodes(G, H):
     """Generator for both graph nodes with summed node attributes.
 
     Generator that yields the a node and the sum of all shared
@@ -57,7 +58,7 @@ def combined_graph_nodes(G, H):
         yield n, attr
 
 
-def combined_graph_edges(G, H):
+def _combined_graph_edges(G, H):
     """Generator for both graph edges with summed edge attributes.
 
     Generator that yields the two nodes that form an edge and the sum
@@ -105,7 +106,7 @@ def combined_graph_edges(G, H):
 
 def combine_graphs(G, H, directed=True):
     """Disjoint and intersection of 2 graphs with attributes summed.
-    
+
     Combines two graphs into a single graph that has the intersection
     and disjoint of the two graphs. All intersecting, numeric node and
     edge attributes that are shared are summed. All intersecting,
@@ -118,22 +119,92 @@ def combine_graphs(G, H, directed=True):
     G, H : networkx.DiGraph
         Graphs that will be combined.
     directed : bool, optional
-        If `False`, return an undirected graph. Default is `True`. 
+        If `False`, return an undirected graph. Default is `True`.
 
     Returns
     -------
     graph : networkx.DiGraph
         Combination of two graphs with all node and edge numeric
         attributes summed.
-
     """
+
     graph = nx.DiGraph()
-    graph.add_nodes_from(combined_graph_nodes(G, H))
-    graph.add_edges_from(combined_graph_edges(G, H))
+    graph.add_nodes_from(_combined_graph_nodes(G, H))
+    graph.add_edges_from(_combined_graph_edges(G, H))
 
     if not directed:
         graph = graph.to_undirected()
     else:
         pass
+
+    return graph
+
+
+def _prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
+                   scaler_range=(0, 1), show_labels=False):
+
+    if edge_attr is None and style_edge:
+        raise AssertionError("If edge attribute is not provided, " +
+                             "edges cannot be styled.")
+    elif edge_attr is None and drop_all_below is not None:
+        raise AssertionError("If edge attribute is not provided, " +
+                             "`drop_all_below` cannot be specified.")
+    else:
+        pass
+
+    graph = nx.DiGraph()
+
+    first_node = [n for n, data in G.nodes.data('rank') if data == 0][0]
+    graph.add_node(first_node, rank=0)
+
+    graph.add_nodes_from([n for n in G.nodes(data=False) if not first_node])
+
+    for n in graph.nodes:
+        graph.node[n]['image'] = 'SMILESimages/' + n + '.png'
+        if show_labels:
+            graph.node[n]['label'] = n
+            graph.node[n]['labelloc'] = 'b'
+        else:
+            graph.node[n]['label'] = ''
+
+    if style_edge:
+        if drop_all_below is not None:
+            data_range = np.array([data[2] for data in G.edges.data(edge_attr)
+                                   if not data[2] < drop_all_below])
+        else:
+            data_range = np.array([data[2] for data
+                                   in G.edges.data(edge_attr)])
+        scaler = Scaler(*scaler_range)
+        scaler.set_data_range(data_range.min(), data_range.max())
+    else:
+        pass
+
+    for u, v, in G.edges:
+        if drop_all_below is not None:
+            if G.edges[u, v][edge_attr] < drop_all_below:
+                continue
+            else:
+                pass
+        else:
+            pass
+
+        if style_edge:
+            if (u, v) in graph.edges:
+                pass
+            else:
+                graph.add_edge(u, v,
+                               penwidth=  # noqa
+                               scaler.transform(G.edges[u, v][edge_attr]))
+        else:
+            if (u, v) in graph.edges:
+                pass
+            elif (v, u) in graph.edges:
+                graph.edges[v, u]['dir'] = 'both'
+            else:
+                if edge_attr is None:
+                    graph.add_edge(u, v)
+                else:
+                    graph.add_edge(u, v)
+                    graph.edges[u, v][edge_attr] = G.edges[u, v][edge_attr]
 
     return graph

@@ -518,7 +518,7 @@ class Network:
                 pybelsmiles = mol.write("smiles").split('\t')[0]
 
                 # Break any Li-O ionic bonds.
-                pybelsmiles = break_ionic_bonds(pybelsmiles)
+                pybelsmiles = _break_ionic_bonds(pybelsmiles)
 
                 # Change how SMILES is written using RDKit.
                 mol = Chem.MolFromSmiles(pybelsmiles)
@@ -526,7 +526,7 @@ class Network:
 
                 # Change any ternary radial carbons into sp2
                 # hybridization to stay consistent.
-                new_smiles = radical_to_sp2(new_smiles)
+                new_smiles = _radical_to_sp2(new_smiles)
 
                 # Change SMILES back into RDKit format.
                 mol = Chem.MolFromSmiles(new_smiles)
@@ -565,24 +565,18 @@ class Network:
         for i, smi in enumerate(smiles_list):
             # If the current SMILES string is missing in the network
             # graph, then add it.
-            if smi in list(network.nodes):
-            # if not isinSMILESlist(smi, list(network.nodes)):
+            if network.has_node(smi):
                 # If the graph is empty, then add first node.
                 if not network.nodes:
-                    network.add_node(smi, fingerprint=SMILESfingerprint(smi),
-                                     count=1, traj_count=1)
+                    network.add_node(smi, rank=0, count=1, traj_count=1)
                 else:
-                    network.add_node(smi, fingerprint=SMILESfingerprint(smi),
-                                     count=1, traj_count=1)
+                    network.add_node(smi, count=1, traj_count=1)
                     network.add_edge(smiles_list[i - 1], smi, count=1,
                                      traj_count=1)
 
             # If the current SMILES string is present in the network.
             else:
-                if (smiles_list[i - 1], smi) in list(network.out_edges):
-                # if isinSMILESlist((smiles_list[i - 1], smi),
-                #                   list(network.out_edges),
-                #                   tuples=True):
+                if network.has_edge(smiles_list[i - 1, smi):
                     network.edges[smiles_list[i - 1], smi]['count'] += 1
                 else:
                     network.add_edge(smiles_list[i - 1], smi, count=1,

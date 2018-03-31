@@ -116,3 +116,58 @@ def viterbi(obs, states, start_p, trans_p, emission_p):
         previous = V[t+1][previous]["prev"]
 
     return optimal_path
+
+
+def fast_viterbi(obs, states, start_p, trans_p, emission_p):
+    """Algorithm used to decode a signal and find the optimal path.
+
+    Parameters
+    ----------
+    obs : numpy.ndarray
+        Numerical representations of the observations.
+    states : list of int
+        Numerical representations of the states in the system.
+    start_p : list of float
+        Probabilities of starting in a particular hidden state.
+    trans_p : list of list of float
+        Probabilities of transitioning from one hidden state to
+        another.
+    emission_p : list of of list of float
+        Probabilities of emitting an observable given the present
+        hidden state.
+
+    Returns
+    -------
+    optimal_path : list of int
+        Optimal path of the system given the observations and Hidden
+        Markov Model parameters."""
+
+    V = np.zeros((len(obs), len(states)))
+    prev_states = np.zeros((len(obs), len(states)), dtype=int)
+
+    V[0, :] = np.log10(start_p[:] * emission_p[:, obs[0]])
+
+    # Run Viterbi when t > 0
+    for t in range(1, len(obs)):
+        for st in states:
+            max_tr_prob = (V[t - 1, :] + np.log10(trans_p[:, st])).max()
+            V[t, st] = max_tr_prob + np.log10(emission_p[st, obs[t]])
+            prev_states[t, st] = np.where(V[t - 1, :] +
+                                          np.log10(trans_p[:, st]) ==
+                                          max_tr_prob)
+
+    optimal_path = np.zeros(len(obs), dtype=int)
+
+    # The highest final probability.
+    max_final_prob = V[-1, :].max()
+
+    # Get most probable state and its backtrack.
+    optimal_path[-1] = np.where(V[-1, :] == max_final_prob)
+    previous = optimal_path[-1]
+
+    # Follow the each backtrack from the saved paths.
+    for t in range(len(V) - 2, -1, -1):
+        optimal_path[t] = prev_states[t + 1, previous]
+        previous = optimal_path[t]
+
+    return optimal_path

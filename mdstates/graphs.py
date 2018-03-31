@@ -142,6 +142,36 @@ def combine_graphs(G, H, directed=True):
 
 def _prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
                    scaler_range=(0, 1), show_labels=False):
+    """Prepares a graph for visualization with Graphviz.
+
+    Parameters
+    ----------
+    G : nx.DiGraph
+    edge_attr : str, optional
+        Name of edge attribute of interest. The specified edge
+        attribute will be used to style any graph edges, if desired,
+        and can be used to filter out low or high values. Default is
+        `None`.
+    drop_all_below : float or int, optional
+        If specified, all edges with attributes of `edge_attr` with
+        values less than `drop_all_below` will not be carried over into
+        the new graph for visualization. Default is `None`.
+    style_edge : bool, optional
+        If `True`, then the final graph will use `edge_attr` to style
+        edges with `penwidth`. Default is `False`.
+    scaler_range : tuple of int or float, optional
+        Tells the program what range to scale the values in `edge_attr`
+        to. Default is (0, 1).
+    show_labels : bool
+        If `True`, node labels will be placed at the bottom of each
+        node. Default is `False`.
+
+    Returns
+    -------
+    graph : nx.DiGraph
+        NetworkX directed graph built to user specifications.
+    """
+
 
     if edge_attr is None and style_edge:
         raise AssertionError("If edge attribute is not provided, " +

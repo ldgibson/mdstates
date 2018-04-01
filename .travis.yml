@@ -17,6 +17,8 @@ install:
   - conda info -a
 
   # Replace dep1 dep2 ... with your dependencies
+  - conda config --add channels rdkit
+  - conda config --add channels mdtraj
   - conda create -q -n test-environment python=3.6.1 networkx pandas numpy cython scipy mdtraj rdkit pygraphviz
   - source activate test-environment
   - python setup.py install

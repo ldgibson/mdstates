@@ -63,4 +63,4 @@ MINOR = _version_minor
 MICRO = _version_micro
 VERSION = __version__
 PACKAGE_DATA = {'mdstates': [pjoin('data', '*')]}
-REQUIRES = ["numpy", "pandas", "cython", "scipy", "mdtraj"]
+REQUIRES = ['aggdraw']

@@ -11,9 +11,10 @@ from rdkit import Chem, DataStructs
 from rdkit.Chem.Fingerprints import FingerprintMols
 
 from .data import bonds
-from .graphs import combined_graph_edges, combine_graphs
+from .graphs import combine_graphs
 from .hmm import generate_ignore_list, viterbi
 from .smiles import *  # noqa
+from .smiles import _break_ionic_bonds, _radical_to_sp2
 
 __all__ = ['Network']
 
@@ -478,11 +479,15 @@ class Network:
             "Number of sets of frames does not equal number of replicas."
 
         for rep_id, rep in enumerate(self.replica):
-            for f in range(1, rep['cmat'].shape[0]):
-                if (rep['cmat'][f, :, :] == rep['cmat'][f - 1, :, :]).all():
-                    pass
-                else:
-                    self.frames[rep_id].append(f)
+            trans_frames = np.where(np.diff(rep['cmat'],
+                                    axis=0).reshape((-1, self.n_atoms **2))\
+                                        .any(axis=1))[0]
+            self.frames[rep_id] = list(trans_frames)
+#            for f in range(1, rep['cmat'].shape[0]):
+#                if (rep['cmat'][f, :, :] == rep['cmat'][f - 1, :, :]).all():
+#                    pass
+#                else:
+#                    self.frames[rep_id].append(f)
         return
 
     def generate_SMILES(self, rep_id, tol=2, split_ions=True):
@@ -576,7 +581,7 @@ class Network:
 
             # If the current SMILES string is present in the network.
             else:
-                if network.has_edge(smiles_list[i - 1, smi):
+                if network.has_edge(smiles_list[i - 1], smi):
                     network.edges[smiles_list[i - 1], smi]['count'] += 1
                 else:
                     network.add_edge(smiles_list[i - 1], smi, count=1,

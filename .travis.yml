@@ -19,7 +19,7 @@ install:
   # Replace dep1 dep2 ... with your dependencies
   - conda config --add channels rdkit
   - conda config --add channels conda-forge
-  - conda create -q -n test-environment python=3.6.1 networkx pandas numpy cython scipy rdkit pygraphviz flake8 pytest
+  - conda create -q -n test-environment python=3.6.1 networkx pandas numpy cython scipy rdkit pygraphviz flake8 pytest pytest-cov
   - source activate test-environment
   - pip install mdtraj
   - python setup.py install

@@ -7,14 +7,13 @@ import networkx as nx
 from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
 import pybel
-from rdkit import Chem, DataStructs
-from rdkit.Chem.Fingerprints import FingerprintMols
+from rdkit import Chem
 
 from .data import bonds
 from .graphs import combine_graphs
 from .hmm import generate_ignore_list, viterbi
-from .smiles import *  # noqa
-from .smiles import _break_ionic_bonds, _radical_to_sp2
+from .smiles import reduceSMILES, save_unique_SMILES, _break_ionic_bonds,\
+    _radical_to_sp2
 
 __all__ = ['Network']
 
@@ -480,8 +479,8 @@ class Network:
 
         for rep_id, rep in enumerate(self.replica):
             trans_frames = np.where(np.diff(rep['cmat'],
-                                    axis=0).reshape((-1, self.n_atoms **2))\
-                                        .any(axis=1))[0]
+                                    axis=0).reshape((-1, self.n_atoms ** 2))
+                                    .any(axis=1))[0]
             self.frames[rep_id] = list(trans_frames)
 #            for f in range(1, rep['cmat'].shape[0]):
 #                if (rep['cmat'][f, :, :] == rep['cmat'][f - 1, :, :]).all():
@@ -536,17 +535,11 @@ class Network:
                 # Change SMILES back into RDKit format.
                 mol = Chem.MolFromSmiles(new_smiles)
                 smiles.append(Chem.MolToSmiles(mol))
-                
+
             else:
                 pass
 
-        # if split_ions:
-        #     smiles = break_ionic_bonds(smiles)
-        # else:
-        #     pass
-
         smiles = reduceSMILES(smiles)
-        #swapconformerSMILES(smiles)
         return smiles
 
     def _build_network(self, smiles_list, image_loc="SMILESimages"):
@@ -562,7 +555,7 @@ class Network:
         -------
         network : networkx.DiGraph
         """
-        
+
         save_unique_SMILES(smiles_list)
 
         network = nx.DiGraph()
@@ -587,12 +580,12 @@ class Network:
                     network.add_edge(smiles_list[i - 1], smi, count=1,
                                      traj_count=1)
         return network
-    
+
     def drawfinalnetwork(self):
         """Builds networks for all replicas and combines them."""
 
         self._build_all_networks()
-        
+
         # Compile all networks into a single graph.
         overall_network = nx.DiGraph()
         for rep in self.replica:
@@ -620,63 +613,4 @@ class Network:
         # pygraph.graph_attr['concentrate'] = 'true'
         pygraph.layout(layout)
         pygraph.draw(filename)
-        return
-
-    def graph_network(self):
-        for rep_id, rep in enumerate(self.replica):
-            smiles = self.generate_SMILES(rep_id)
-            reduced = reduceSMILES(smiles)
-            swapconformerSMILES(reduced)
-            unique = uniqueSMILES(reduced)
-            SMILESlisttofile(unique)
-            G = self._build_network(reduced)
-            self._draw_network(G, 'network' + str(rep_id) + '.png')
-        return
-
-    def allrepsnetwork(self, image_loc="SMILESimages"):
-        network = nx.DiGraph()
-
-        for rep_id, rep in enumerate(self.replica):
-            smiles_list = self.generate_SMILES(rep_id)
-            smiles_list = reduceSMILES(smiles_list)
-            swapconformerSMILES(smiles_list)
-            unique = uniqueSMILES(smiles_list)
-            allrepsSMILES(unique)
-
-            for i, smi in enumerate(smiles_list):
-                # If the current SMILES string is missing in the network
-                # graph, then add it.
-                if not isinSMILESlist(smi, list(network.nodes)):
-                    # If the graph is empty, then add first node.
-                    if not network.nodes:
-                        network.add_node(smi, rank=0, label="",
-                                         image=os.path.join(image_loc,
-                                                            smi + '.png'))
-                    else:
-                        # If this node and the previous node were
-                        # connected before, then add to that edge.
-                        if isinSMILESlist((smiles_list[i - 1], smi),
-                                          list(network.out_edges),
-                                          tuples=True):
-                            network.edges[smiles_list[i - 1],
-                                          smi]['penwidth'] += 1
-
-                        # If this node is new, add the node with its
-                        # image and connect this node with the previous
-                        # one.
-                        else:
-                            network.add_node(smi, label="",
-                                             image=os.path.join(image_loc,
-                                                                smi + '.png'))
-                            network.add_edge(smiles_list[i - 1], smi,
-                                             penwidth=1.0)
-                # If the current SMILES string is present in the network.
-                else:
-                    if isinSMILESlist((smiles_list[i - 1], smi),
-                                      list(network.out_edges),
-                                      tuples=True):
-                        network.edges[smiles_list[i - 1], smi]['penwidth'] += 1
-                    else:
-                        network.add_edge(smiles_list[i - 1], smi, penwidth=1.0)
-        self._draw_network(network, 'allrepsnetwork.png')
         return

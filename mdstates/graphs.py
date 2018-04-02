@@ -1,5 +1,6 @@
 from itertools import chain
 from numbers import Number
+import os
 
 import networkx as nx
 import numpy as np
@@ -141,7 +142,8 @@ def _combined_graph_edges(G, H):
 
 
 def _prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
-                   scaler_range=(0, 1), show_labels=False):
+                   scaler_range=(0, 1), show_labels=False,
+                   image_loc='SMILESimages'):
     """Prepares a graph for visualization with Graphviz.
 
     Parameters
@@ -186,10 +188,10 @@ def _prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
     first_node = [n for n, data in G.nodes.data('rank') if data == 0][0]
     graph.add_node(first_node, rank=0)
 
-    graph.add_nodes_from([n for n in G.nodes(data=False) if not first_node])
+    graph.add_nodes_from([n for n in G.nodes(data=False) if n != first_node])
 
     for n in graph.nodes:
-        graph.node[n]['image'] = 'SMILESimages/' + n + '.png'
+        graph.node[n]['image'] = os.path.join(image_loc, str(n) + '.png')
         if show_labels:
             graph.node[n]['label'] = n
             graph.node[n]['labelloc'] = 'b'
@@ -208,7 +210,7 @@ def _prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
     else:
         pass
 
-    for u, v, in G.edges:
+    for u, v in G.edges:
         if drop_all_below is not None:
             if G.edges[u, v][edge_attr] < drop_all_below:
                 continue
@@ -221,19 +223,18 @@ def _prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
             if (u, v) in graph.edges:
                 pass
             else:
-                graph.add_edge(u, v,
-                               penwidth=  # noqa
+                graph.add_edge(u, v, penwidth=  # noqa
                                scaler.transform(G.edges[u, v][edge_attr]))
         else:
-            if (u, v) in graph.edges:
+            if graph.has_edge(u, v):
                 pass
-            elif (v, u) in graph.edges:
+            elif edge_attr is None and graph.has_edge(v, u):
                 graph.edges[v, u]['dir'] = 'both'
             else:
+                graph.add_edge(u, v)
                 if edge_attr is None:
-                    graph.add_edge(u, v)
+                    pass
                 else:
-                    graph.add_edge(u, v)
                     graph.edges[u, v][edge_attr] = G.edges[u, v][edge_attr]
 
     return graph

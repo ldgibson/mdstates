@@ -1,4 +1,2 @@
+aggdraw
 mdtraj
-numpy
-pandas
-cython

@@ -6,7 +6,7 @@ import numpy as np
 
 from .util import Scaler
 
-#__all__ = ['combined_graph_nodes', 'combined_graph_edges', 'combine_graphs']
+# __all__ = ['combined_graph_nodes', 'combined_graph_edges', 'combine_graphs']
 
 
 def _combined_graph_nodes(G, H):
@@ -171,7 +171,6 @@ def _prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
     graph : nx.DiGraph
         NetworkX directed graph built to user specifications.
     """
-
 
     if edge_attr is None and style_edge:
         raise AssertionError("If edge attribute is not provided, " +

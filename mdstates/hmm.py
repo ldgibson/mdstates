@@ -27,8 +27,8 @@ def generate_ignore_list(cmat, n):
     ignore_list = [[], []]
     n_atoms = cmat.shape[1]
 
-    for i in range(n_atoms-1):
-        for j in range(i+1, n_atoms):
+    for i in range(n_atoms - 1):
+        for j in range(i + 1, n_atoms):
             # Find all unique values and their respective counts
             values, counts = np.unique(cmat[:, i, j], return_counts=True)
             unique = dict(zip(values, counts))
@@ -86,12 +86,12 @@ def viterbi(obs, states, start_p, trans_p, emission_p):
     for t in range(1, len(obs)):
         V.append({})
         for st in states:
-            max_tr_prob = max(V[t-1][prev_st]["log_prob"] +
+            max_tr_prob = max(V[t - 1][prev_st]["log_prob"] +
                               np.log10(trans_p[prev_st, st])
                               for prev_st in states)
 
             for prev_st in states:
-                if V[t-1][prev_st]["log_prob"] + \
+                if V[t - 1][prev_st]["log_prob"] + \
                         np.log10(trans_p[prev_st, st]) == max_tr_prob:
                     max_prob = max_tr_prob + np.log10(emission_p[st, obs[t]])
                     V[t][st] = {"log_prob": max_prob, "prev": prev_st}
@@ -112,8 +112,8 @@ def viterbi(obs, states, start_p, trans_p, emission_p):
 
     # Follow the backtrack till the first observation
     for t in range(len(V) - 2, -1, -1):
-        optimal_path.insert(0, V[t+1][previous]["prev"])
-        previous = V[t+1][previous]["prev"]
+        optimal_path.insert(0, V[t + 1][previous]["prev"])
+        previous = V[t + 1][previous]["prev"]
 
     return optimal_path
 

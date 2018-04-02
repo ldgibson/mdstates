@@ -1,4 +1,6 @@
-from ..graphs import *
+import networkx as nx
+
+from ..graphs import combine_graphs, _combined_graph_edges
 
 
 def test_combine_graphs():
@@ -13,9 +15,10 @@ def test_combine_graphs():
     H.add_edges_from([(2, 3, {'weight': 1}), (3, 4, {'weight': 1})])
     
     combined = combine_graphs(G, H)
+    true_nodes = [1, 2, 3, 4]
     
-    assert list(combined.nodes) == [1, 2, 3, 4],\
-        "Node lists are not the same."
+    for n in true_nodes:
+        assert combined.has_node(n), "Node lists are not the same."
     
     assert combined.node[2]['color'] == 'blue',\
         "Not propagating node attributes."
@@ -33,7 +36,7 @@ def test_combine_graphs():
         assert edge in true_edges, "Incorrect edges."
     return
 
-def test_combined_graph_edges():
+def test__combined_graph_edges():
     G = nx.Graph()
     G.add_nodes_from([1, 2, 3])
     G.add_edges_from([(1, 2, {'weight': 1}), (2, 3, {'weight': 1})])
@@ -46,7 +49,7 @@ def test_combined_graph_edges():
                   (2, 3, {'weight': 2}),
                   (3, 4, {'weight': 1})]
     
-    for u, v, data in combined_graph_edges(G, H):
+    for u, v, data in _combined_graph_edges(G, H):
         assert (u, v) in set(G.edges) | set(H.edges),\
             "Edge pair not found in original graphs."
         assert (u, v, data) in true_edges,\

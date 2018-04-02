@@ -61,8 +61,8 @@ class Network:
         information. All replicas must have the same topology and must
         have different `trajectory` paths.
 
-        Parmeters
-        ---------
+        Parameters
+        ----------
         trajectory : str
             File name of the trajectory file.
         topology : str

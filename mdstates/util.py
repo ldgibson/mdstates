@@ -29,6 +29,12 @@ class Scaler:
         return
 
     def set_data_range(self, min_val, max_val):
+        """Sets the mininum and maximum range of working data.
+
+        Parameters
+        ----------
+        min_val, max_val : float or int
+        """
         assert min_val <= max_val,\
             "First argument must be less or equal to than second argument."
         self.max_val = max_val
@@ -36,6 +42,16 @@ class Scaler:
         return
 
     def transform(self, data):
+        """Transforms a datum or list of data into the normalized scale.
+
+        Parameters
+        ----------
+        data : float or int or list of float or int
+
+        Returns
+        -------
+        float or list of float
+            Transformed value into the user specified scale."""
         if isinstance(data, Number):
             if data > self.max_val or data < self.min_val:
                 raise ValueError("{} is out of range.".format(data))

@@ -7,7 +7,7 @@ import numpy as np
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.Draw import DrawingOptions
-from rdkit.Chem.Fingerprints.FingerprintMols
+from rdkit.Chem.Fingerprints import FingerprintMols
 from rdkit.DataStructs import FingerprintSimilarity
 
 #__all__ = ['issameSMILES', 'isinSMILESlist', 'differentstrings',

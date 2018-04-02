@@ -1,273 +1,15 @@
 import re
-import os
-import os.path 
-import warnings
+import os.path
 
-import numpy as np
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.Draw import DrawingOptions
-from rdkit.Chem.Fingerprints import FingerprintMols
-from rdkit.DataStructs import FingerprintSimilarity
 
-#__all__ = ['issameSMILES', 'isinSMILESlist', 'differentstrings',
+# __all__ = ['issameSMILES', 'isinSMILESlist', 'differentstrings',
 #           'replaceSMILES', 'swapconformerSMILES', 'reduceSMILES',
 #           'uniqueSMILES', 'SMILEStofile', 'SMILESlisttofile',
 #           'save_unique_SMILES', 'SMILESfingerprint']
 
-
-def issameSMILES(smiles1, smiles2):
-    """Checks if two SMILES strings match.
-
-    Generates chemical fingerprints for every SMILES string and
-    evaluates the fingerprint similarities between `smiles` and
-    every element in `smiles_list` using the Tanimoto metric.
-    If any of the similarities are perfect matches, then this
-    function returns `True`, otherwise `False`.
-
-    Parameters
-    ----------
-    smiles1, smiles2 : str
-
-    Returns
-    -------
-    bool
-        Returns `False` if `smiles` does not match any SMILES strings in
-        `smiles_list`, or if `smiles_list` is empty. Returns `True` if
-        `smiles` does match at least one SMILES string in `smiles_list`.
-
-    Raises
-    ------
-    TypeError
-        If `smiles1` or `smiles2` are not strings.
-    SyntaxError
-        If `smiles1` or `smiles2` are empty.
-    SyntaxError
-        If any of the SMILES strings passed are not valid.
-    """
-    if not isinstance(smiles1, str) or not isinstance(smiles2, str):
-        raise TypeError("Must pass strings.")
-    else:
-        pass
-
-    if not smiles1 or not smiles2:
-        raise SyntaxError("Cannot pass an empty string.")
-    else:
-        pass
-
-    warnings.warn("This function is deprecated.", DeprecationWarning)
-
-    mol1 = Chem.MolFromSmiles(smiles1)
-    mol2 = Chem.MolFromSmiles(smiles2)
-
-    if mol1 is None:
-        raise SyntaxError("{} is not a valid SMILES string.".format(smiles1))
-    elif mol2 is None:
-        raise SyntaxError("{} is not a valid SMILES string.".format(smiles2))
-    else:
-        pass
-
-    if smiles1 == smiles2:
-        return True
-    else:
-        pass
-
-    fp1 = FingerprintMol(mol1)
-    fp2 = FingerprintMol(mol2)
-
-    similarity = DataStructs.FingerprintSimilarity(fp1, fp2)
-
-    if np.isclose(similarity, 1):
-        return True
-    else:
-        return False
-
-
-def isinSMILESlist(smiles, smiles_list, tuples=False):
-    """Checks if a SMILES string matches any SMILES in a list.
-
-    Generates chemical fingerprints for every SMILES string and evaluates the
-    fingerprint similarities between `smiles` and every element in
-    `smiles_list` using the Tanimoto metric.  If any of the similarities are
-    perfect matches, then this function returns `True`, otherwise `False`.
-
-    Parameters
-    ----------
-    smiles_list : list of str or list of tuple of str
-        List containing SMILES strings.
-    smiles : str
-
-    Returns
-    -------
-    bool
-        Returns `False` if `smiles` does not match any SMILES strings in
-        `smiles_list`, or if `smiles_list` is empty. Returns `True` if `smiles`
-        does match at least one SMILES string in `smiles_list`.
-
-    Raises
-    ------
-    TypeError
-        If `smiles_list` is not a list of strings.
-    TypeError
-        If `smiles` is not a string.
-    SyntaxError
-        If `smiles` is empty.
-    SyntaxError
-        If any of the SMILES strings passed are not valid.
-    """
-    warnings.warn("This function is deprecated.", DeprecationWarning)
-
-    if not tuples:
-        if not smiles:
-            raise SyntaxError("Cannot pass an empty string.")
-        else:
-            pass
-
-        if not isinstance(smiles_list, list):
-            raise TypeError("`smiles_list` must be of `list` type.")
-        else:
-            pass
-
-        is_string = [isinstance(smi, str) for smi in smiles_list]
-        if not all(is_string):
-            raise TypeError("All items in `smiles_list` must be strings.")
-        else:
-            pass
-
-        if Chem.MolFromSmiles(smiles) is None:
-            raise SyntaxError("{} : invalid SMILES string.".format(smiles))
-        else:
-            pass
-    else:
-        if not smiles[0] or not smiles[1]:
-            raise SyntaxError("Cannot pass an empty string.")
-        elif not isinstance(smiles[0], str) or\
-                not isinstance(smiles[1], str):
-            raise TypeError("SMILES must be strings.")
-        else:
-            pass
-
-        is_string = [all((isinstance(smi1, str),
-                          isinstance(smi2, str)))
-                     for smi1, smi2 in smiles_list]
-        if not all(is_string):
-            raise TypeError("All items in `smiles_list` must be strings.")
-        else:
-            pass
-
-        mol1 = Chem.MolFromSmiles(smiles[0])
-        mol2 = Chem.MolFromSmiles(smiles[1])
-
-        if mol1 is None:
-            raise SyntaxError("{} : invalid SMILES string.".format(smiles[0]))
-        elif mol2 is None:
-            raise SyntaxError("{} : invalid SMILES string.".format(smiles[1]))
-        else:
-            pass
-
-    if not smiles_list:
-        return False
-    else:
-        if not tuples:
-            for smi in smiles_list:
-                if Chem.MolFromSmiles(smi) is None:
-                    raise SyntaxError("{} : ".format(smi) +
-                                      "invalid SMILES string.")
-                else:
-                    pass
-        else:
-            for smi1, smi2 in smiles_list:
-                mol1 = Chem.MolFromSmiles(smi1)
-                mol2 = Chem.MolFromSmiles(smi2)
-
-                if mol1 is None:
-                    raise SyntaxError("{} : ".format(smi1) +
-                                      "invalid SMILES string.")
-                elif mol2 is None:
-                    raise SyntaxError("{} : ".format(smi2) +
-                                      "invalid SMILES string.")
-                else:
-                    pass
-
-    if not tuples:
-        similarity = [issameSMILES(smiles, smi) for smi in smiles_list]
-    else:
-        similarity = [all((issameSMILES(smiles[0], smi1),
-                           issameSMILES(smiles[1], smi2)))
-                      for smi1, smi2 in smiles_list]
-
-    if any(similarity):
-        return True
-    else:
-        return False
-
-
-def differentstrings(smiles1, smiles2):
-    """
-    Checks if 2 SMILES strings have same fingerprint but different strings.
-    """
-    warnings.warn("This function is deprecated.", DeprecationWarning)
-
-    if smiles1 != smiles2 and issameSMILES(smiles1, smiles2):
-        return True
-    else:
-        return False
-
-
-def replaceSMILES(smiles_list, i, smiles):
-    """Replaces a list entry with another entry.
-
-    Parameters
-    ----------
-    smiles_list : list of str
-        List of SMILES strings.
-    i : int
-        Index of entry to be replaced.
-    smiles: str
-        SMILES string to replace list entry."""
-
-    warnings.warn("This function is deprecated.", DeprecationWarning)
-
-    del smiles_list[i]
-    smiles_list.insert(i, smiles)
-    return
-
-
-def swapconformerSMILES(smiles_list, inplace=True):
-    """Replaces SMILES strings with equivalent SMILES strings.
-
-    Parameters
-    ----------
-    smiles_list : list of str
-        List of SMILES strings.
-    inplace : bool, optional
-        If `True`, replace elements in original list and return `None`.
-        Otherwise, copy the original list, modify it, and return it. Default
-        is `True`.
-
-    Returns
-    -------
-    smiles_list : list of str
-        Copy of the original argument with replacements made."""
-
-    warnings.warn("This function is deprecated.", DeprecationWarning)
-
-    if not inplace:
-        smiles_list = smiles_list.copy()
-    else:
-        pass
-
-    for i in range(1, len(smiles_list)):
-        for j in range(len(smiles_list[:i-1])):
-            if differentstrings(smiles_list[i], smiles_list[j]):
-                replaceSMILES(smiles_list, i, smiles_list[j])
-            else:
-                pass
-
-    if not inplace:
-        return smiles_list
-    else:
-        return
 
 def reduceSMILES(smiles_list):
     """Removes repeated SMILES strings in a list.
@@ -275,7 +17,7 @@ def reduceSMILES(smiles_list):
     Parameters
     ----------
     smiles_list : list of str
-    
+
     Returns
     -------
     reduced_smiles : list of str
@@ -298,6 +40,7 @@ def reduceSMILES(smiles_list):
             reduced_smiles.append(smi)
 
     return reduced_smiles
+
 
 def uniqueSMILES(smiles_list):
     """Finds all unique SMILES in a list.
@@ -322,6 +65,7 @@ def uniqueSMILES(smiles_list):
             unique.append(smi)
     return unique
 
+
 def SMILEStofile(smiles, filename, fit_image, size=(400, 400), show=False):
     """Saves image of 2D structure of SMILES string.
 
@@ -338,6 +82,7 @@ def SMILEStofile(smiles, filename, fit_image, size=(400, 400), show=False):
     if show:
         Draw.MolToImage(mol)
     return
+
 
 def saveSMILESimages(smiles_list, location="SMILESimages", size=(400, 400),
                      bondlinewidth=2.0, atomlabelfontsize=16, fit_image=True,
@@ -386,47 +131,11 @@ def saveSMILESimages(smiles_list, location="SMILESimages", size=(400, 400),
                          size=size)
     return
 
-def SMILESlisttofile(smiles_list, location="SMILESimages", size=(400, 400),
-                     bondlinewidth=2.0, atomlabelfontsize=16, fit_image=True):
-    """Saves images of a list of SMILES strings to a specified folder.
-
-    Parameters
-    ----------
-    smiles_list : list of str
-    location : str
-        Folder name to save all generated images into.
-    bondlinewidth : float or int
-        Controls width of bond lines when drawing 2D structures of
-        SMILES strings.
-    atomlabelfontsize : float or int
-        Controls the font size of all atom labels when drawing 2D
-        structures of SMILES strings.
-    """
-
-    warnings.warn("This function is deprecated. " +
-                  "Use `saveSMILESimages` instead", DeprecationWarning)
-
-    os.system("rm -rf " + location)
-    os.system("mkdir " + location)
-
-    DrawingOptions.bondLineWidth = bondlinewidth
-    DrawingOptions.atomLabelFontSize = atomlabelfontsize
-
-    for smi in smiles_list:
-        SMILEStofile(smi, os.path.join(location,smi+'.png'), fit_image,
-                     size=size)
-    return
-
 
 def save_unique_SMILES(smiles_list):
     unique = uniqueSMILES(smiles_list)
     saveSMILESimages(unique)
     return
-
-
-def SMILESfingerprint(smiles):
-    mol = Chem.MolFromSmiles(smiles)
-    return FingerprintMols.FingerprintMol(mol)
 
 
 def _break_ionic_bonds(smiles):

@@ -38,18 +38,18 @@ def _combined_graph_nodes(G, H):
 
     for n in chain(intersect, disj):
         if n in G.nodes and n in H.nodes:
-            attr = G.node[n].copy()
-            hdata = H.node[n]
+            attr = H.node[n].copy()
+            gdata = G.node[n]
 
             # All node attributes that are shared.
-            shared = set(attr) & set(hdata)
+            shared = set(attr) & set(gdata)
             for key in shared:
                 if isinstance(attr[key], Number):
-                    attr.update({key: attr[key] + hdata[key]})
+                    attr.update({key: attr[key] + gdata[key]})
 
             # All node attributes that are not shared.
-            not_shared = set(hdata) - set(attr)
-            attr.update((key, hdata[key]) for key in not_shared)
+            not_shared = set(gdata) - set(attr)
+            attr.update((key, gdata[key]) for key in not_shared)
         elif n in G.nodes:
             attr = G.node[n]
         else:
@@ -87,15 +87,15 @@ def _combined_graph_edges(G, H):
 
     for u, v in chain(intersect, disj):
         if (u, v) in G.edges and (u, v) in H.edges:
-            attr = G[u][v].copy()
-            hdata = H[u][v]
-            shared = set(attr) & set(hdata)
+            attr = H[u][v].copy()
+            gdata = G[u][v]
+            shared = set(attr) & set(gdata)
             for key in shared:
                 if isinstance(attr[key], Number):
-                    attr.update({key: attr[key] + hdata[key]})
+                    attr.update({key: attr[key] + gdata[key]})
 
-            not_shared = set(hdata) - set(attr)
-            attr.update((key, hdata[key]) for key in not_shared)
+            not_shared = set(gdata) - set(attr)
+            attr.update((key, gdata[key]) for key in not_shared)
         elif (u, v) in G.edges:
             attr = G[u][v]
         else:

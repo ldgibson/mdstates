@@ -9,6 +9,42 @@ from .util import Scaler
 # __all__ = ['combined_graph_nodes', 'combined_graph_edges', 'combine_graphs']
 
 
+def combine_graphs(G, H, directed=True):
+    """Disjoint and intersection of 2 graphs with attributes summed.
+
+    Combines two graphs into a single graph that has the intersection
+    and disjoint of the two graphs. All intersecting, numeric node and
+    edge attributes that are shared are summed. All intersecting,
+    non-numeric node and edge attributes that are shared are only
+    contributed by `H`. All non-shared attributes at copied into the
+    new graph, as well as all disjoint node and edge attributes.
+
+    Parameters
+    ----------
+    G, H : networkx.DiGraph
+        Graphs that will be combined.
+    directed : bool, optional
+        If `False`, return an undirected graph. Default is `True`.
+
+    Returns
+    -------
+    graph : networkx.DiGraph
+        Combination of two graphs with all node and edge numeric
+        attributes summed.
+    """
+
+    graph = nx.DiGraph()
+    graph.add_nodes_from(_combined_graph_nodes(G, H))
+    graph.add_edges_from(_combined_graph_edges(G, H))
+
+    if not directed:
+        graph = graph.to_undirected()
+    else:
+        pass
+
+    return graph
+
+
 def _combined_graph_nodes(G, H):
     """Generator for both graph nodes with summed node attributes.
 
@@ -102,42 +138,6 @@ def _combined_graph_edges(G, H):
             attr = H[u][v]
 
         yield u, v, attr
-
-
-def combine_graphs(G, H, directed=True):
-    """Disjoint and intersection of 2 graphs with attributes summed.
-
-    Combines two graphs into a single graph that has the intersection
-    and disjoint of the two graphs. All intersecting, numeric node and
-    edge attributes that are shared are summed. All intersecting,
-    non-numeric node and edge attributes that are shared are only
-    contributed by `H`. All non-shared attributes at copied into the
-    new graph, as well as all disjoint node and edge attributes.
-
-    Parameters
-    ----------
-    G, H : networkx.DiGraph
-        Graphs that will be combined.
-    directed : bool, optional
-        If `False`, return an undirected graph. Default is `True`.
-
-    Returns
-    -------
-    graph : networkx.DiGraph
-        Combination of two graphs with all node and edge numeric
-        attributes summed.
-    """
-
-    graph = nx.DiGraph()
-    graph.add_nodes_from(_combined_graph_nodes(G, H))
-    graph.add_edges_from(_combined_graph_edges(G, H))
-
-    if not directed:
-        graph = graph.to_undirected()
-    else:
-        pass
-
-    return graph
 
 
 def _prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,

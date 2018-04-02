@@ -157,18 +157,13 @@ def test__prepare_graph():
         pass
     else:
         raise Exception("Cannot drop edges with attribute values less than " +
-                        str(drop_all_below) +
-                        " if `edge_attr` is not specified.")
+                        "a value if `edge_attr` is not specified.")
 
     # Test function with only `edge_attr` and `image_loc` flags.
     graph = _prepare_graph(G, edge_attr='counts', image_loc="smiles")
 
-    true_edges = [(1, 2, {'counts': 4}),
-                  (2, 3, {'counts': 2}),
-                  (2, 1, {'counts': 1})]
-    
     assert graph.node[2]['rank'] == 0, "Node 2 must have rank=0"
-    
+
     for n in graph:
         assert graph.node[n]['image'] == os.path.join("smiles",
                                                       str(n) + '.png'),\
@@ -182,10 +177,10 @@ def test__prepare_graph():
     graph2 = _prepare_graph(G, edge_attr='counts', drop_all_below=2)
 
     assert graph2.node[2]['rank'] == 0, "Node 2 must have rank=0"
-    
+
     for n in graph2:
         assert graph2.node[n]['image'] == os.path.join("SMILESimages",
-                                                      str(n) + '.png'),\
+                                                       str(n) + '.png'),\
             "Incorrect image path specified."
 
     assert graph2.edges[1, 2]['counts'] == 4, "Incorrect edge attribute value."
@@ -196,10 +191,10 @@ def test__prepare_graph():
     graph3 = _prepare_graph(G, edge_attr='counts', style_edge=True)
 
     assert graph3.node[2]['rank'] == 0, "Node 2 must have rank=0"
-    
+
     for n in graph3:
         assert graph3.node[n]['image'] == os.path.join("SMILESimages",
-                                                      str(n) + '.png'),\
+                                                       str(n) + '.png'),\
             "Incorrect image path specified."
 
     assert_almost_equal(graph3.edges[1, 2]['penwidth'], 1.0,

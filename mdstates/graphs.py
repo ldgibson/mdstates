@@ -1,5 +1,6 @@
 from itertools import chain
 from numbers import Number
+import os
 
 import networkx as nx
 import numpy as np
@@ -186,12 +187,12 @@ def _prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
     first_node = [n for n, data in G.nodes.data('rank') if data == 0][0]
     graph.add_node(first_node, rank=0)
 
-    graph.add_nodes_from([n for n in G.nodes(data=False) if not first_node])
+    graph.add_nodes_from([n for n in G.nodes(data=False) if n != first_node])
 
     for n in graph.nodes:
-        graph.node[n]['image'] = 'SMILESimages/' + n + '.png'
+        graph.node[n]['image'] = os.path.join('SMILESimages', str(n) + '.png')
         if show_labels:
-            graph.node[n]['label'] = n
+            graph.node[n]['label'] = str(n)
             graph.node[n]['labelloc'] = 'b'
         else:
             graph.node[n]['label'] = ''

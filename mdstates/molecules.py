@@ -16,27 +16,43 @@ def contact_matrix_to_SMILES(cmat, atom_list):
 
     Returns
     -------
-    smiles : list of str
-        List of SMILES string associated with every contact matrix.
+    smiles : str
+        SMILES string of molecule built from contact matrix.
     """
 
+    # Build the molecule
     mol = build_molecule(cmat, atom_list)
 
-    mol = Chem.RemoveHs(mol)
-
+    # Generate SMILES string from molecule
     smiles = Chem.MolToSmiles(mol)
 
     return smiles
 
 
 def build_molecule(cmat, atom_list):
+    """Builds a molecule from a contact matrix and list of atoms.
+
+    Parameters
+    ----------
+    cmat : numpy.ndarray
+        Contact matrix defining the connectivity of the molecule(s).
+    atom_list : list
+        List of atoms with indices that correspond to those in the
+        contact matrix.
+
+    Returns
+    -------
+    mol : rdkit.Chem.rdchem.RWMol
+    """
+
     mol = Chem.RWMol()
     set_structure(mol, cmat, atom_list)
     radicals = build_radical_graph(mol)
-    set_positive_charges(radicals)
+    set_positive_charges(mol)
     Chem.SanitizeMol(mol)
     estimate_bonds(radicals)
     Chem.SanitizeMol(mol)
+    mol = Chem.RemoveHs(mol)
     return mol
 
 
@@ -56,8 +72,11 @@ def set_structure(mol, cmat, atom_list):
         mol.AddAtom(Chem.Atom(atom))
 
     for i, j in zip(*np.where(cmat[:, :] == 1)):
-        if mol.GetAtomWithIdx(int(i)).GetSymbol() == 'Li' or\
-                mol.GetAtomWithIdx(int(j)).GetSymbol() == 'Li':
+        if mol.GetAtomWithIdx(int(i)).GetSymbol() == 'Li':
+            mol.GetAtomWithIdx(int(i)).SetFormalCharge(1)
+            continue
+        elif mol.GetAtomWithIdx(int(j)).GetSymbol() == 'Li':
+            mol.GetAtomWithIdx(int(j)).SetFormalCharge(1)
             continue
         else:
             pass
@@ -104,7 +123,7 @@ def build_radical_graph(mol):
 
     radicals = nx.Graph()
 
-    for i, atom in enumerate(diff_valence):
+    for atom in diff_valence:
         val = atom.GetTotalDegree() - pt.GetDefaultValence(atom.GetSymbol())
         if not radicals.nodes:
             radicals.add_node(atom, valence=val)
@@ -126,10 +145,10 @@ def build_radical_graph(mol):
     return radicals
 
 
-def set_positive_charges(graph):
+def set_positive_charges(mol):
 
     pt = Chem.GetPeriodicTable()
-    for atom in graph:
+    for atom in mol.GetAtoms():
         default_valence = pt.GetDefaultValence(atom.GetSymbol())
         if atom.GetTotalDegree() > default_valence:
             charge = atom.GetTotalDegree() - default_valence

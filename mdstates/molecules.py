@@ -46,12 +46,19 @@ def build_molecule(cmat, atom_list):
     """
 
     mol = Chem.RWMol()
+
+    # Connect atoms with single bonds.
     set_structure(mol, cmat, atom_list)
-    radicals = build_radical_graph(mol)
+
+    # Set positive charges to atoms with excess valence.
     set_positive_charges(mol)
     Chem.SanitizeMol(mol)
-    estimate_bonds(radicals)
+
+    # Estimate any double and triple bonds.
+    estimate_bonds(mol)
     Chem.SanitizeMol(mol)
+
+    # Remove any unnecessary hydrogens.
     mol = Chem.RemoveHs(mol)
     return mol
 
@@ -89,22 +96,22 @@ def set_structure(mol, cmat, atom_list):
     return
 
 
-def estimate_bonds(graph):
+def estimate_bonds(mol):
     """Estimates bond order based on default atom valencies."""
 
     # Build connections of radicals
-    for atom1, atom2 in graph.edges():
-        atom1_radicals = atom1.GetNumRadicalElectrons()
-        atom2_radicals = atom2.GetNumRadicalElectrons()
+    for bond in mol.GetBonds():
+        atom1_radicals = bond.GetBeginAtom().GetNumRadicalElectrons()
+        atom2_radicals = bond.GetEndAtom().GetNumRadicalElectrons()
 
         if atom1_radicals >= 2 and atom2_radicals >= 2:
-            graph.edges[atom1, atom2]['bond'].SetBondType(Chem.BondType.TRIPLE)
-            atom1.SetNumRadicalElectrons(atom1_radicals - 2)
-            atom2.SetNumRadicalElectrons(atom2_radicals - 2)
+            bond.SetBondType(Chem.BondType.TRIPLE)
+            bond.GetBeginAtom().SetNumRadicalElectrons(atom1_radicals - 2)
+            bond.GetEndAtom().SetNumRadicalElectrons(atom2_radicals - 2)
         elif atom1_radicals >= 1 and atom2_radicals >= 1:
-            graph.edges[atom1, atom2]['bond'].SetBondType(Chem.BondType.DOUBLE)
-            atom1.SetNumRadicalElectrons(atom1_radicals - 1)
-            atom2.SetNumRadicalElectrons(atom2_radicals - 1)
+            bond.SetBondType(Chem.BondType.DOUBLE)
+            bond.GetBeginAtom().SetNumRadicalElectrons(atom1_radicals - 1)
+            bond.GetEndAtom().SetNumRadicalElectrons(atom2_radicals - 1)
         else:
             pass
     return

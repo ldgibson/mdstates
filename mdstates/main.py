@@ -10,7 +10,7 @@ import pybel
 from rdkit import Chem
 
 from .data import bonds
-from .graphs import combine_graphs
+from .graphs import combine_graphs, _prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .molecules import contact_matrix_to_SMILES
 from .smiles import reduceSMILES, save_unique_SMILES, _break_ionic_bonds,\
@@ -543,7 +543,8 @@ class Network:
         smiles = reduceSMILES(smiles)
         return smiles
 
-    def generate_SMILES(self, rep_id, tol=2):
+    def generate_SMILES(self, rep_id, tol=2,
+                        first_smiles='O=C1OCCO1.O=C1OCCO1.[Li]'):
         """Generates list of SMILES strings from trajectory.
 
         Parameters
@@ -562,9 +563,9 @@ class Network:
         """
 
         frames = self.frames[rep_id].copy()
-        frames.insert(0, 0)
 
         smiles = []
+        smiles.append(first_smiles)
 
         for rep in self.replica:
             for f in range(rep['cmat'].shape[0]):
@@ -575,11 +576,10 @@ class Network:
                 else:
                     pass
 
-                
         smiles = reduceSMILES(smiles)
         return smiles
 
-    def _build_network(self, smiles_list, image_loc="SMILESimages"):
+    def _build_network(self, smiles_list):
         """Builds the network from a list of SMILES strings.
 
         Parameters
@@ -600,7 +600,7 @@ class Network:
         for i, smi in enumerate(smiles_list):
             # If the current SMILES string is missing in the network
             # graph, then add it.
-            if network.has_node(smi):
+            if not network.has_node(smi):
                 # If the graph is empty, then add first node.
                 if not network.nodes:
                     network.add_node(smi, rank=0, count=1, traj_count=1)
@@ -618,7 +618,7 @@ class Network:
                                      traj_count=1)
         return network
 
-    def drawfinalnetwork(self):
+    def drawfinalnetwork(self, layout='dot', **kwargs):
         """Builds networks for all replicas and combines them."""
 
         self._build_all_networks()
@@ -628,13 +628,8 @@ class Network:
         for rep in self.replica:
             overall_network = combine_graphs(overall_network, rep['network'])
 
-        mol = next(pybel.readfile('pdb', self.topology))
-        starting_smiles = mol.write('smiles').split('\t')[0]
-
-        overall_network.add_node(starting_smiles, rank=0,
-                                 image=os.path.join("SMILESimages",
-                                                    starting_smiles + '.png'))
-        self._draw_network(overall_network, 'overall.png')
+        final = _prepare_graph(overall_network, **kwargs)
+        self._draw_network(final, 'overall.png', layout=layout)
         return
 
     def _build_all_networks(self):

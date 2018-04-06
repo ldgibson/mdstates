@@ -12,6 +12,7 @@ from rdkit import Chem
 from .data import bonds
 from .graphs import combine_graphs
 from .hmm import generate_ignore_list, viterbi
+from .molecules import contact_matrix_to_SMILES
 from .smiles import reduceSMILES, save_unique_SMILES, _break_ionic_bonds,\
     _radical_to_sp2
 
@@ -489,7 +490,7 @@ class Network:
 #                    self.frames[rep_id].append(f)
         return
 
-    def generate_SMILES(self, rep_id, tol=2, split_ions=True):
+    def generate_SMILES_old(self, rep_id, tol=2, split_ions=True):
         """Generates list of SMILES strings from trajectory.
 
         Parameters
@@ -539,6 +540,42 @@ class Network:
             else:
                 pass
 
+        smiles = reduceSMILES(smiles)
+        return smiles
+
+    def generate_SMILES(self, rep_id, tol=2):
+        """Generates list of SMILES strings from trajectory.
+
+        Parameters
+        ----------
+        rep_id : int
+            Replica identifier.
+        tol : int, optional
+            Trajectory frames that are +/- `tol` frames from transition
+            frames will be converted to SMILES strings. Default is 2.
+
+        Returns
+        -------
+        smiles : list of str
+            List of SMILES strings compiled from all trajectory frames
+            within the specified tolerance of transition frames.
+        """
+
+        frames = self.frames[rep_id].copy()
+        frames.insert(0, 0)
+
+        smiles = []
+
+        for rep in self.replica:
+            for f in range(rep['cmat'].shape[0]):
+                if np.isclose(f, frames, atol=tol).any():
+                    smi = contact_matrix_to_SMILES(rep['cmat'][f, :, :],
+                                                   self.atoms)
+                    smiles.append(smi)
+                else:
+                    pass
+
+                
         smiles = reduceSMILES(smiles)
         return smiles
 

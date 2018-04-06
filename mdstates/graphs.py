@@ -10,6 +10,42 @@ from .util import Scaler
 # __all__ = ['combined_graph_nodes', 'combined_graph_edges', 'combine_graphs']
 
 
+def combine_graphs(G, H, directed=True):
+    """Disjoint and intersection of 2 graphs with attributes summed.
+
+    Combines two graphs into a single graph that has the intersection
+    and disjoint of the two graphs. All intersecting, numeric node and
+    edge attributes that are shared are summed. All intersecting,
+    non-numeric node and edge attributes that are shared are only
+    contributed by `H`. All non-shared attributes at copied into the
+    new graph, as well as all disjoint node and edge attributes.
+
+    Parameters
+    ----------
+    G, H : networkx.DiGraph
+        Graphs that will be combined.
+    directed : bool, optional
+        If `False`, return an undirected graph. Default is `True`.
+
+    Returns
+    -------
+    graph : networkx.DiGraph
+        Combination of two graphs with all node and edge numeric
+        attributes summed.
+    """
+
+    graph = nx.DiGraph()
+    graph.add_nodes_from(_combined_graph_nodes(G, H))
+    graph.add_edges_from(_combined_graph_edges(G, H))
+
+    if not directed:
+        graph = graph.to_undirected()
+    else:
+        pass
+
+    return graph
+
+
 def _combined_graph_nodes(G, H):
     """Generator for both graph nodes with summed node attributes.
 
@@ -39,18 +75,18 @@ def _combined_graph_nodes(G, H):
 
     for n in chain(intersect, disj):
         if n in G.nodes and n in H.nodes:
-            attr = G.node[n].copy()
-            hdata = H.node[n]
+            attr = H.node[n].copy()
+            gdata = G.node[n]
 
             # All node attributes that are shared.
-            shared = set(attr) & set(hdata)
+            shared = set(attr) & set(gdata)
             for key in shared:
                 if isinstance(attr[key], Number):
-                    attr.update({key: attr[key] + hdata[key]})
+                    attr.update({key: attr[key] + gdata[key]})
 
             # All node attributes that are not shared.
-            not_shared = set(hdata) - set(attr)
-            attr.update((key, hdata[key]) for key in not_shared)
+            not_shared = set(gdata) - set(attr)
+            attr.update((key, gdata[key]) for key in not_shared)
         elif n in G.nodes:
             attr = G.node[n]
         else:
@@ -88,15 +124,15 @@ def _combined_graph_edges(G, H):
 
     for u, v in chain(intersect, disj):
         if (u, v) in G.edges and (u, v) in H.edges:
-            attr = G[u][v].copy()
-            hdata = H[u][v]
-            shared = set(attr) & set(hdata)
+            attr = H[u][v].copy()
+            gdata = G[u][v]
+            shared = set(attr) & set(gdata)
             for key in shared:
                 if isinstance(attr[key], Number):
-                    attr.update({key: attr[key] + hdata[key]})
+                    attr.update({key: attr[key] + gdata[key]})
 
-            not_shared = set(hdata) - set(attr)
-            attr.update((key, hdata[key]) for key in not_shared)
+            not_shared = set(gdata) - set(attr)
+            attr.update((key, gdata[key]) for key in not_shared)
         elif (u, v) in G.edges:
             attr = G[u][v]
         else:
@@ -105,44 +141,9 @@ def _combined_graph_edges(G, H):
         yield u, v, attr
 
 
-def combine_graphs(G, H, directed=True):
-    """Disjoint and intersection of 2 graphs with attributes summed.
-
-    Combines two graphs into a single graph that has the intersection
-    and disjoint of the two graphs. All intersecting, numeric node and
-    edge attributes that are shared are summed. All intersecting,
-    non-numeric node and edge attributes that are shared are only
-    contributed by `H`. All non-shared attributes at copied into the
-    new graph, as well as all disjoint node and edge attributes.
-
-    Parameters
-    ----------
-    G, H : networkx.DiGraph
-        Graphs that will be combined.
-    directed : bool, optional
-        If `False`, return an undirected graph. Default is `True`.
-
-    Returns
-    -------
-    graph : networkx.DiGraph
-        Combination of two graphs with all node and edge numeric
-        attributes summed.
-    """
-
-    graph = nx.DiGraph()
-    graph.add_nodes_from(_combined_graph_nodes(G, H))
-    graph.add_edges_from(_combined_graph_edges(G, H))
-
-    if not directed:
-        graph = graph.to_undirected()
-    else:
-        pass
-
-    return graph
-
-
 def _prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
-                   scaler_range=(0, 1), show_labels=False):
+                   scaler_range=(0, 1), show_labels=False,
+                   image_loc='SMILESimages'):
     """Prepares a graph for visualization with Graphviz.
 
     Parameters
@@ -190,7 +191,7 @@ def _prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
     graph.add_nodes_from([n for n in G.nodes(data=False) if n != first_node])
 
     for n in graph.nodes:
-        graph.node[n]['image'] = os.path.join('SMILESimages', str(n) + '.png')
+        graph.node[n]['image'] = os.path.join(image_loc, str(n) + '.png')
         if show_labels:
             graph.node[n]['label'] = str(n)
             graph.node[n]['labelloc'] = 'b'
@@ -209,7 +210,7 @@ def _prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
     else:
         pass
 
-    for u, v, in G.edges:
+    for u, v in G.edges:
         if drop_all_below is not None:
             if G.edges[u, v][edge_attr] < drop_all_below:
                 continue
@@ -222,19 +223,18 @@ def _prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
             if (u, v) in graph.edges:
                 pass
             else:
-                graph.add_edge(u, v,
-                               penwidth=  # noqa
+                graph.add_edge(u, v, penwidth=  # noqa
                                scaler.transform(G.edges[u, v][edge_attr]))
         else:
-            if (u, v) in graph.edges:
+            if graph.has_edge(u, v):
                 pass
-            elif (v, u) in graph.edges:
+            elif edge_attr is None and graph.has_edge(v, u):
                 graph.edges[v, u]['dir'] = 'both'
             else:
+                graph.add_edge(u, v)
                 if edge_attr is None:
-                    graph.add_edge(u, v)
+                    pass
                 else:
-                    graph.add_edge(u, v)
                     graph.edges[u, v][edge_attr] = G.edges[u, v][edge_attr]
 
     return graph

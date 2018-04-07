@@ -80,10 +80,8 @@ def set_structure(mol, cmat, atom_list):
 
     for i, j in zip(*np.where(cmat[:, :] == 1)):
         if mol.GetAtomWithIdx(int(i)).GetSymbol() == 'Li':
-            mol.GetAtomWithIdx(int(i)).SetFormalCharge(1)
             continue
         elif mol.GetAtomWithIdx(int(j)).GetSymbol() == 'Li':
-            mol.GetAtomWithIdx(int(j)).SetFormalCharge(1)
             continue
         else:
             pass

@@ -1,3 +1,4 @@
+from itertools import groupby
 import re
 import warnings
 
@@ -575,8 +576,9 @@ class Network:
                 else:
                     pass
 
-        smiles = reduceSMILES(smiles)
-        return smiles
+        # smiles = reduceSMILES(smiles)
+        reduced_smiles = [smi for smi, _ in groupby(smiles)]
+        return reduced_smiles
 
     def _build_network(self, smiles_list):
         """Builds the network from a list of SMILES strings.
@@ -623,7 +625,7 @@ class Network:
         self._build_all_networks()
 
         # Compile all networks into a single graph.
-        overall_network = nx.DiGraph()
+        overall_network = nx.DiGraph(ordering='out')
         for rep in self.replica:
             overall_network = combine_graphs(overall_network, rep['network'])
 

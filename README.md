@@ -1,4 +1,6 @@
 # mdstates
 [![Build Status](https://travis-ci.org/ldgibson/mdstates.png?branch=master)](https://travis-ci.org/ldgibson/mdstates)
 
-This python package can be used to analyze transitions in states (e.g. chemical reactions) in molecular dynamics trajectores and generate graphs of networks.
+MD-States is a python package for the analysis and visualization of networks (e.g. chemical reaction networks) from molecular dynamics (MD) trajectories. This package is developed and maintained by the [Pfaendtner Research Group](http://prg.washington.edu/) in the Department of Chemical Engineering at the University of Washington in Seattle.
+
+**Support planned for `python 3.6+` only.**

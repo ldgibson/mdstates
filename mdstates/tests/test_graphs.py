@@ -4,7 +4,7 @@ import networkx as nx
 from numpy.testing import assert_almost_equal
 
 from ..graphs import combine_graphs, _combined_graph_edges,\
-    _combined_graph_nodes, _prepare_graph
+    _combined_graph_nodes, prepare_graph
 
 
 def test_combine_graphs():
@@ -135,7 +135,7 @@ def test__combined_graph_nodes():
     return
 
 
-def test__prepare_graph():
+def test_prepare_graph():
     G = nx.DiGraph()
     G.add_node(2, rank=0)
     G.add_edges_from([(1, 2, {'counts': 4}),
@@ -144,7 +144,7 @@ def test__prepare_graph():
 
     # Check that errors are raised with bad input.
     try:
-        _prepare_graph(G, style_edge=True)
+        prepare_graph(G, style_edge=True)
     except(AssertionError):
         pass
     else:
@@ -152,7 +152,7 @@ def test__prepare_graph():
                         "edge_attr is not specified.")
 
     try:
-        _prepare_graph(G, drop_all_below=4)
+        prepare_graph(G, drop_all_below=4)
     except(AssertionError):
         pass
     else:
@@ -160,7 +160,7 @@ def test__prepare_graph():
                         "a value if `edge_attr` is not specified.")
 
     # Test function with only `edge_attr` and `image_loc` flags.
-    graph = _prepare_graph(G, edge_attr='counts', image_loc="smiles")
+    graph = prepare_graph(G, edge_attr='counts', image_loc="smiles")
 
     assert graph.node[2]['rank'] == 0, "Node 2 must have rank=0"
 
@@ -174,7 +174,7 @@ def test__prepare_graph():
     assert graph.edges[2, 1]['counts'] == 1, "Incorrect edge attribute value."
 
     # Test new flags.
-    graph2 = _prepare_graph(G, edge_attr='counts', drop_all_below=2)
+    graph2 = prepare_graph(G, edge_attr='counts', drop_all_below=2)
 
     assert graph2.node[2]['rank'] == 0, "Node 2 must have rank=0"
 
@@ -188,7 +188,7 @@ def test__prepare_graph():
     assert not graph2.has_edge(2, 1), "Edge should have been dropped."
 
     # Test `style_edge` flag.
-    graph3 = _prepare_graph(G, edge_attr='counts', style_edge=True)
+    graph3 = prepare_graph(G, edge_attr='counts', style_edge=True)
 
     assert graph3.node[2]['rank'] == 0, "Node 2 must have rank=0"
 

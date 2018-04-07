@@ -6,11 +6,6 @@ from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.Draw import DrawingOptions
 
-# __all__ = ['issameSMILES', 'isinSMILESlist', 'differentstrings',
-#           'replaceSMILES', 'swapconformerSMILES', 'reduceSMILES',
-#           'uniqueSMILES', 'SMILEStofile', 'SMILESlisttofile',
-#           'save_unique_SMILES', 'SMILESfingerprint']
-
 
 def uniqueSMILES(smiles_list):
     """Finds all unique SMILES in a list.
@@ -101,6 +96,12 @@ def saveSMILESimages(smiles, location="SMILESimages", size=(400, 400),
 
 
 def save_unique_SMILES(smiles_list):
+    """Finds unique SMILES and saves 2D structure images of each.
+
+    Parameters
+    ----------
+    smiles_list : list of str"""
+
     unique = uniqueSMILES(smiles_list)
     saveSMILESimages(unique)
     return

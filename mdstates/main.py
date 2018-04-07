@@ -10,7 +10,7 @@ import pybel
 from rdkit import Chem
 
 from .data import bonds
-from .graphs import combine_graphs, _prepare_graph
+from .graphs import combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .molecules import contact_matrix_to_SMILES
 from .smiles import save_unique_SMILES
@@ -140,7 +140,7 @@ class Network:
         del self.replica[rep_id]
         return
 
-    def generate_contact_matrix(self):
+    def generate_contact_matrix(self, cutoff_frac=1.3):
         """
         Converts each trajectory frame to a contact matrix.
 
@@ -152,6 +152,14 @@ class Network:
         reshapes the array into contact matrices for each frame, then
         converts the interatomic distances to a `1` or `0`, depending
         on the atom pair's cutoff.
+
+        Parameters
+        ----------
+        cutoff_frac : float, optional
+            Determines what each interatomic distance cutoff will be
+            used for each atom pair. A `cutoff_frac` of 1.3 implies
+            that for each atom pair, the cutoff distance will be 1.3
+            times the equilibrium bond distance. Default is 1.3.
         """
 
         # Check if atom pairs have been determined.
@@ -162,7 +170,7 @@ class Network:
 
         # Check if cutoff matrix has been built.
         if len(self._cutoff) < len(self._pairs):
-            self._build_cutoff()
+            self._build_cutoff(cutoff_frac)
         else:
             pass
 
@@ -389,13 +397,18 @@ class Network:
         self.atoms = table['element'].tolist()
         return
 
-    def _build_cutoff(self):
+    def _build_cutoff(self, cutoff_frac=1.3):
         """
         Builds the cutoff dictionary for all unique atom pairs.
 
         Finds the unique atoms in the system, then loops over
         every unique pair of atoms and checks the bond distance
         database for a value.
+
+        Parameters
+        ----------
+        cutoff_frac : float, optional
+            See `generate_contact_matrix` for parameter description.
 
         Raises
         ------
@@ -415,17 +428,18 @@ class Network:
             for atom2 in unique[i:]:
                 if frozenset([atom1, atom2]) not in self._cutoff.keys():
                     self._cutoff[frozenset([atom1, atom2])] =\
-                        self._bond_distance(atom1, atom2)
+                        self._bond_distance(atom1, atom2, frac=cutoff_frac)
         return
 
-    def _bond_distance(self, atom1, atom2):
+    def _bond_distance(self, atom1, atom2, frac=1.3):
         """
         Queries a database to fetch a bond distance between two atoms.
 
         Parameters
         ----------
-        atom1 : str
-        atom2 : str
+        atom1, atom2 : str
+        frac : float, optional
+            See `generate_contact_matrix` for parameter description.
 
         Returns
         -------
@@ -443,7 +457,7 @@ class Network:
         loc_bool = [x in bonds.index for x in pair]
         if any(loc_bool):
             idx = loc_bool.index(True)
-            return float(bonds.loc[pair[idx], 'distance']) * 0.13
+            return float(bonds.loc[pair[idx], 'distance']) * 0.1 * frac
         else:
             raise LookupError(pair[0] + " was not found in cutoff " +
                               "database. Please manually add it to " +
@@ -482,11 +496,6 @@ class Network:
                                     axis=0).reshape((-1, self.n_atoms ** 2))
                                     .any(axis=1))[0]
             self.frames[rep_id] = list(trans_frames)
-#            for f in range(1, rep['cmat'].shape[0]):
-#                if (rep['cmat'][f, :, :] == rep['cmat'][f - 1, :, :]).all():
-#                    pass
-#                else:
-#                    self.frames[rep_id].append(f)
         return
 
     def generate_SMILES(self, rep_id, tol=2,
@@ -522,7 +531,6 @@ class Network:
                 else:
                     pass
 
-        # smiles = reduceSMILES(smiles)
         reduced_smiles = [smi for smi, _ in groupby(smiles)]
         return reduced_smiles
 
@@ -565,7 +573,7 @@ class Network:
                                      traj_count=1)
         return network
 
-    def drawfinalnetwork(self, layout='dot', **kwargs):
+    def draw_overall_network(self, layout='dot', **kwargs):
         """Builds networks for all replicas and combines them."""
 
         self._build_all_networks()
@@ -575,7 +583,7 @@ class Network:
         for rep in self.replica:
             overall_network = combine_graphs(overall_network, rep['network'])
 
-        final = _prepare_graph(overall_network, **kwargs)
+        final = prepare_graph(overall_network, **kwargs)
         self._draw_network(final, 'overall.png', layout=layout)
         return
 

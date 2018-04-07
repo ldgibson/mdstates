@@ -142,8 +142,8 @@ def _combined_graph_edges(G, H):
 
 
 def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
-                   scaler_range=(0, 1), show_labels=False,
-                   image_loc='SMILESimages'):
+                  scaler_range=(0, 1), show_labels=False,
+                  image_loc='SMILESimages'):
     """Prepares a graph for visualization with Graphviz.
 
     Parameters

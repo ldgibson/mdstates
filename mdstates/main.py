@@ -1,13 +1,9 @@
 from itertools import groupby
-import re
-import warnings
 
 import mdtraj as md
 import networkx as nx
 from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
-import pybel
-from rdkit import Chem
 
 from .data import bonds
 from .graphs import combine_graphs, prepare_graph

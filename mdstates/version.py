@@ -3,9 +3,9 @@ from os.path import join as pjoin
 
 # Format expected by setup.py and doc/source/conf.py: string of form "X.Y.Z"
 _version_major = 0
-_version_minor = 1
-_version_micro = ''  # use '' for first of series, number for 1 and above
-_version_extra = 'dev'
+_version_minor = 0
+_version_micro = 1  # use '' for first of series, number for 1 and above
+_version_extra = 'dev1'
 # _version_extra = ''  # Uncomment this for full releases
 
 # Construct full version string from these.
@@ -30,9 +30,9 @@ description = "mdstates: a package for analyzing states in MD trajectories"
 # Long description will go up on the pypi page
 long_description = """
 
-MDStates
+MD-States
 ========
-mdstates is a python package for locating and analyzing different states in
+MD-States is a python package for analyzing and visualizing different states in
 MD trajectories.
 
 License
@@ -52,7 +52,7 @@ MAINTAINER = "Luke D Gibson"
 MAINTAINER_EMAIL = "ldgibson@uw.edu"
 DESCRIPTION = description
 LONG_DESCRIPTION = long_description
-URL = "http://github.com/ldgibson/mdreactions"
+URL = "http://github.com/ldgibson/mdstates"
 DOWNLOAD_URL = ""
 LICENSE = "MIT"
 AUTHOR = "Luke D Gibson"

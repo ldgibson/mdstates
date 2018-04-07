@@ -1,19 +1,15 @@
 name: mdstates-env
 channels:
   - rdkit
-  - openbabel
   - conda-forge
 dependencies:
-  - python==3.6.1
+  - python>=3.6
   - networkx>=2.1
   - pandas
   - numpy
-  - cython>=0.19
-  - scipy
   - rdkit
   - pygraphviz
-  - openbabel
+  - mdtraj
   - pip
   - pip:
       - aggdraw
-      - mdtraj

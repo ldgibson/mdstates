@@ -141,7 +141,7 @@ def _combined_graph_edges(G, H):
         yield u, v, attr
 
 
-def _prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
+def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
                    scaler_range=(0, 1), show_labels=False,
                    image_loc='SMILESimages'):
     """Prepares a graph for visualization with Graphviz.

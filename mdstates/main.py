@@ -575,7 +575,7 @@ class Network:
 
         self._build_all_networks()
 
-        final = self._build_overall_networks(exclude=exclude, **kwargs)
+        final = self._compile_networks(exclude=exclude, **kwargs)
 
         self._draw_network(final, filename=filename, layout=layout)
         return

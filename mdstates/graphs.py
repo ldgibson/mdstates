@@ -183,7 +183,7 @@ def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
     else:
         pass
 
-    graph = nx.DiGraph(ordering='out')
+    graph = nx.DiGraph()
 
     first_node = [n for n, data in G.nodes.data('rank') if data == 0][0]
     graph.add_node(first_node, rank=0)

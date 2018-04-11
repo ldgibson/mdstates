@@ -574,13 +574,13 @@ class Network:
         """Builds networks for all replicas and combines them."""
 
         self._build_all_networks()
-
-        final = self._compile_networks(exclude=exclude, **kwargs)
+        compiled = self._compile_networks(exclude=exclude)
+        final = prepare_graph(compiled, **kwargs)
 
         self._draw_network(final, filename=filename, layout=layout)
         return
 
-    def _compile_networks(self, exclude=[], **kwargs):
+    def _compile_networks(self, exclude=[]):
         """Compiles all replica networks into a single overall network.
 
         Parameters
@@ -597,13 +597,12 @@ class Network:
         overall_network = nx.DiGraph()
         for i, rep in enumerate(self.replica):
             if i in exclude:
-                continue
+                pass
             else:
                 overall_network = combine_graphs(overall_network,
                                                  rep['network'])
 
-        final = prepare_graph(overall_network, **kwargs)
-        return final
+        return overall_network
 
     def _build_all_networks(self):
         """Builds networks for all replicas."""
@@ -618,14 +617,7 @@ class Network:
     def _draw_network(self, nxgraph, filename, layout="dot", write=True,
                       first_smiles='O=C1OCCO1.O=C1OCCO1.[Li]'):
         pygraph = to_agraph(nxgraph)
-        # pygraph.graph_attr['mclimit'] = 100.0
-        # pygraph.graph_attr['nslimit'] = 10000000
-        # pygraph.graph_attr['nslimit1'] = 10000000
-        # pygraph.graph_attr['newrank'] = 'true'
-        cluster = pygraph.subgraph([first_smiles,
-                                   *pygraph.neighbors(first_smiles)],
-                                   name='cluster1', style='invis')
-        cluster.add_subgraph([first_smiles], rank='source')
+        pygraph.add_subgraph([first_smiles], rank='source')
         pygraph.layout(layout)
         if write:
             pygraph.write("input.dot")

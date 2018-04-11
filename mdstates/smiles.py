@@ -80,7 +80,7 @@ def saveSMILESimages(smiles, location="SMILESimages", size=(400, 400),
         else:
             pass
 
-    print("Saving SMILES images to: {}".format(os.getcwd()))
+    print("Saving SMILES images to: {}".format(os.path.abspath(location)))
 
     DrawingOptions.bondLineWidth = bondlinewidth
     DrawingOptions.atomLabelFontSize = atomlabelfontsize

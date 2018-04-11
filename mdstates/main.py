@@ -4,7 +4,6 @@ import mdtraj as md
 import networkx as nx
 from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
-import pygraphviz as pyg
 
 from .data import bonds
 from .graphs import combine_graphs, prepare_graph
@@ -570,19 +569,41 @@ class Network:
                                      traj_count=1)
         return network
 
-    def draw_overall_network(self, filename='overall.png', layout='dot', **kwargs):
+    def draw_overall_network(self, filename='overall.png', layout='dot',
+                             exclude=[], **kwargs):
         """Builds networks for all replicas and combines them."""
 
         self._build_all_networks()
 
-        # Compile all networks into a single graph.
-        overall_network = nx.DiGraph()
-        for rep in self.replica:
-            overall_network = combine_graphs(overall_network, rep['network'])
+        final = self._build_overall_networks(exclude=exclude, **kwargs)
 
-        final = prepare_graph(overall_network, **kwargs)
         self._draw_network(final, filename=filename, layout=layout)
         return
+
+    def _compile_networks(self, exclude=[], **kwargs):
+        """Compiles all replica networks into a single overall network.
+
+        Parameters
+        ----------
+        exclude : list
+            List of replica IDs to exclude from overall network
+            compilation.
+
+        Returns
+        -------
+        final : networkx.DiGraph
+            Compiled network.
+        """
+        overall_network = nx.DiGraph()
+        for i, rep in enumerate(self.replica):
+            if i in exclude:
+                continue
+            else:
+                overall_network = combine_graphs(overall_network,
+                                                 rep['network'])
+
+        final = prepare_graph(overall_network, **kwargs)
+        return final
 
     def _build_all_networks(self):
         """Builds networks for all replicas."""
@@ -602,8 +623,8 @@ class Network:
         # pygraph.graph_attr['nslimit1'] = 10000000
         # pygraph.graph_attr['newrank'] = 'true'
         cluster = pygraph.subgraph([first_smiles,
-                                    *pygraph.neighbors(first_smiles)],
-                                    name='cluster1', style='invis')
+                                   *pygraph.neighbors(first_smiles)],
+                                   name='cluster1', style='invis')
         cluster.add_subgraph([first_smiles], rank='source')
         pygraph.layout(layout)
         if write:

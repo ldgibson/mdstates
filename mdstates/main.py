@@ -1,4 +1,5 @@
 from itertools import groupby
+from os.path import abspath
 
 import mdtraj as md
 import networkx as nx
@@ -271,6 +272,65 @@ class Network:
         print("{} iterations of Viterbi algorithm.".format(counter))
         return
 
+    def generate_SMILES(self, rep_id, tol=2,
+                        first_smiles='O=C1OCCO1.O=C1OCCO1.[Li]'):
+        """Generates list of SMILES strings from trajectory.
+
+        Parameters
+        ----------
+        rep_id : int
+            Replica identifier.
+        tol : int, optional
+            Trajectory frames that are +/- `tol` frames from transition
+            frames will be converted to SMILES strings. Default is 2.
+
+        Returns
+        -------
+        smiles : list of str
+            List of SMILES strings compiled from all trajectory frames
+            within the specified tolerance of transition frames.
+        """
+
+        frames = self.frames[rep_id].copy()
+
+        smiles = []
+        smiles.append(first_smiles)
+
+        for rep in self.replica:
+            for f in range(rep['cmat'].shape[0]):
+                if np.isclose(f, frames, atol=tol).any():
+                    smi = contact_matrix_to_SMILES(rep['cmat'][f, :, :],
+                                                   self.atoms)
+                    smiles.append(smi)
+                else:
+                    pass
+
+        reduced_smiles = [smi for smi, _ in groupby(smiles)]
+        return reduced_smiles
+
+    def draw_overall_network(self, filename='overall.png', exclude=[],
+                             SMILES_loc='SMILESimages', **kwargs):
+        """Builds networks for all replicas and combines them.
+
+        Parameters
+        ----------
+        filename : str
+            Name of final graph image.
+        exclude : list of int, optional
+            List of replica IDs to exclude from the overall graph
+            generation.
+        SMILES_loc : str
+            Name of the directory in which SMILES images will be saved.
+        """
+
+        self._build_all_networks()
+        print("Saving SMILES images to: {}".format(abspath(SMILES_loc)))
+        compiled = self._compile_networks(exclude=exclude)
+        final = prepare_graph(compiled, **kwargs)
+
+        self._draw_network(final, filename=filename)
+        return
+
     def _generate_pairs(self):
         """
         Generates the atom pairs for interatomic distance calculations.
@@ -494,42 +554,6 @@ class Network:
             self.frames[rep_id] = list(trans_frames)
         return
 
-    def generate_SMILES(self, rep_id, tol=2,
-                        first_smiles='O=C1OCCO1.O=C1OCCO1.[Li]'):
-        """Generates list of SMILES strings from trajectory.
-
-        Parameters
-        ----------
-        rep_id : int
-            Replica identifier.
-        tol : int, optional
-            Trajectory frames that are +/- `tol` frames from transition
-            frames will be converted to SMILES strings. Default is 2.
-
-        Returns
-        -------
-        smiles : list of str
-            List of SMILES strings compiled from all trajectory frames
-            within the specified tolerance of transition frames.
-        """
-
-        frames = self.frames[rep_id].copy()
-
-        smiles = []
-        smiles.append(first_smiles)
-
-        for rep in self.replica:
-            for f in range(rep['cmat'].shape[0]):
-                if np.isclose(f, frames, atol=tol).any():
-                    smi = contact_matrix_to_SMILES(rep['cmat'][f, :, :],
-                                                   self.atoms)
-                    smiles.append(smi)
-                else:
-                    pass
-
-        reduced_smiles = [smi for smi, _ in groupby(smiles)]
-        return reduced_smiles
-
     def _build_network(self, smiles_list):
         """Builds the network from a list of SMILES strings.
 
@@ -568,17 +592,6 @@ class Network:
                     network.add_edge(smiles_list[i - 1], smi, count=1,
                                      traj_count=1)
         return network
-
-    def draw_overall_network(self, filename='overall.png', layout='dot',
-                             exclude=[], **kwargs):
-        """Builds networks for all replicas and combines them."""
-
-        self._build_all_networks()
-        compiled = self._compile_networks(exclude=exclude)
-        final = prepare_graph(compiled, **kwargs)
-
-        self._draw_network(final, filename=filename, layout=layout)
-        return
 
     def _compile_networks(self, exclude=[]):
         """Compiles all replica networks into a single overall network.
@@ -624,4 +637,33 @@ class Network:
         else:
             pass
         pygraph.draw(filename)
+        return
+
+    def _draw_network_with_graphviz(overall, filename="overall", format='png'):
+        """Draw with Python Graphviz instead of PyGraphviz."""
+        from graphviz import Digraph
+        g = Digraph('G', filename='graph.gv', format=format)
+        first_smiles = 'O=C1OCCO1.O=C1OCCO1.[Li]'
+        for n, data in overall.nodes(data=True):
+            if n == first_smiles:
+                with g.subgraph(name='top') as top:
+                    top.graph_attr.update(rank='source')
+                    top.node(n, image=data['image'])
+            else:
+                g.node(n, image=data['image'])
+
+        for u, v, data in overall.edges(data=True):
+            if 'dir' in data:
+                g.edge(u, v, dir='both')
+            elif 'style' in data:
+                g.edge(u, v, style=data['style'])
+            elif 'penwidth' in data:
+                g.edge(u, v, penwidth=data['penwidth'])
+            else:
+                g.edge(u, v)
+
+        g.node_attr.update(label="")
+
+        g.render(filename=filename)
+
         return

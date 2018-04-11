@@ -230,6 +230,7 @@ def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
                 pass
             elif edge_attr is None and graph.has_edge(v, u):
                 graph.edges[v, u]['dir'] = 'both'
+                graph.add_edge(u, v, style='invis')
             else:
                 graph.add_edge(u, v)
                 if edge_attr is None:

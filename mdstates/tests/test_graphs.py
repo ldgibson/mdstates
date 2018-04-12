@@ -137,7 +137,6 @@ def test__combined_graph_nodes():
 
 def test_prepare_graph():
     G = nx.DiGraph()
-    G.add_node(2, rank=0)
     G.add_edges_from([(1, 2, {'counts': 4}),
                       (2, 3, {'counts': 2}),
                       (2, 1, {'counts': 1})])
@@ -162,8 +161,6 @@ def test_prepare_graph():
     # Test function with only `edge_attr` and `image_loc` flags.
     graph = prepare_graph(G, edge_attr='counts', image_loc="smiles")
 
-    assert graph.node[2]['rank'] == 0, "Node 2 must have rank=0"
-
     for n in graph:
         assert graph.node[n]['image'] == os.path.join("smiles",
                                                       str(n) + '.png'),\
@@ -174,9 +171,8 @@ def test_prepare_graph():
     assert graph.edges[2, 1]['counts'] == 1, "Incorrect edge attribute value."
 
     # Test new flags.
-    graph2 = prepare_graph(G, edge_attr='counts', drop_all_below=2)
-
-    assert graph2.node[2]['rank'] == 0, "Node 2 must have rank=0"
+    graph2 = prepare_graph(G, edge_attr='counts', drop_all_below=2,
+                           root_node=1)
 
     for n in graph2:
         assert graph2.node[n]['image'] == os.path.join("SMILESimages",
@@ -189,8 +185,6 @@ def test_prepare_graph():
 
     # Test `style_edge` flag.
     graph3 = prepare_graph(G, edge_attr='counts', style_edge=True)
-
-    assert graph3.node[2]['rank'] == 0, "Node 2 must have rank=0"
 
     for n in graph3:
         assert graph3.node[n]['image'] == os.path.join("SMILESimages",

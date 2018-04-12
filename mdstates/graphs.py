@@ -143,7 +143,8 @@ def _combined_graph_edges(G, H):
 
 def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
                   scaler_range=(0, 1), show_labels=False,
-                  image_loc='SMILESimages'):
+                  image_loc='SMILESimages',
+                  root_node='O=C1OCCO1.O=C1OCCO1.[Li]'):
     """Prepares a graph for visualization with Graphviz.
 
     Parameters
@@ -249,7 +250,6 @@ def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
                     graph.edges[u, v][edge_attr] = G.edges[u, v][edge_attr]
 
     if drop_all_below is not None:
-        root_node = 'O=C1OCCO1.O=C1OCCO1.[Li]'
         paths = nx.shortest_path(graph, source=root_node)
         graph.remove_nodes_from([n for n in graph if n not in paths])
 

@@ -185,10 +185,11 @@ def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
 
     graph = nx.DiGraph()
 
-    first_node = [n for n, data in G.nodes.data('rank') if data == 0][0]
-    graph.add_node(first_node, rank=0)
+    # first_node = [n for n, data in G.nodes.data('rank') if data == 0][0]
+    # graph.add_node(first_node, rank=0)
 
-    graph.add_nodes_from([n for n in G.nodes(data=False) if n != first_node])
+    # graph.add_nodes_from([n for n in G.nodes(data=False) if n != first_node])
+    graph.add_nodes_from(G.nodes(data=False))
 
     for n in graph.nodes:
         graph.node[n]['image'] = os.path.join(image_loc, str(n) + '.png')
@@ -210,6 +211,15 @@ def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
     else:
         pass
 
+    # if drop_all_below is not None:
+    #     for n, data in list(G.nodes(data=edge_attr)):
+    #         if data < drop_all_below:
+    #             graph.remove_node(n)
+    #         else:
+    #             pass
+    # else:
+    #     pass
+
     for u, v in G.edges:
         if drop_all_below is not None:
             if G.edges[u, v][edge_attr] < drop_all_below:
@@ -220,7 +230,7 @@ def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
             pass
 
         if style_edge:
-            if (u, v) in graph.edges:
+            if graph.has_edge(u, v):
                 pass
             else:
                 graph.add_edge(u, v, penwidth=  # noqa
@@ -237,5 +247,10 @@ def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
                     pass
                 else:
                     graph.edges[u, v][edge_attr] = G.edges[u, v][edge_attr]
+
+    if drop_all_below is not None:
+        root_node = 'O=C1OCCO1.O=C1OCCO1.[Li]'
+        paths = nx.shortest_path(graph, source=root_node)
+        graph.remove_nodes_from([n for n in graph if n not in paths])
 
     return graph

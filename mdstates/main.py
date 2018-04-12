@@ -7,7 +7,7 @@ from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
 
 from .data import bonds
-from .graphs import combine_graphs, prepare_graph
+from .graphs import calculate_all_jp, combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .molecules import contact_matrix_to_SMILES
 from .smiles import save_unique_SMILES
@@ -326,6 +326,7 @@ class Network:
         self._build_all_networks()
         print("Saving SMILES images to: {}".format(abspath(SMILES_loc)))
         compiled = self._compile_networks(exclude=exclude)
+        calculate_all_jp(compiled, len(self.replica) - len(exclude))
         final = prepare_graph(compiled, **kwargs)
 
         self._draw_network(final, filename=filename)

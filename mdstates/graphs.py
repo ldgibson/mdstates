@@ -254,3 +254,27 @@ def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
         graph.remove_nodes_from([n for n in graph if n not in paths])
 
     return graph
+
+
+def calculate_all_jp(graph, num_replicas):
+    """Calculate justified presence for all graph edges.
+
+    Parameters
+    ----------
+    graph : networkx.DiGraph
+    num_replicas : int"""
+    for u, v in graph.edges:
+        calculate_jp(graph.edges[u, v], num_replicas)
+    return
+
+
+def calculate_jp(graph_edge, num_replicas):
+    """Calculate justified presence for a single graph edge.
+
+    Parameters
+    ----------
+    graph_edge : networkx.DiGraph.edge
+        Dictionary containing graph edge attributes.
+    num_replicas : int"""
+    graph_edge['jp'] = graph_edge['traj_count'] / num_replicas * 100
+    return

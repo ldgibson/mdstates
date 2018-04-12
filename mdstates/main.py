@@ -578,7 +578,7 @@ class Network:
             if not network.has_node(smi):
                 # If the graph is empty, then add first node.
                 if not network.nodes:
-                    network.add_node(smi, rank=0, count=1, traj_count=1)
+                    network.add_node(smi, count=1, traj_count=1)
                 else:
                     network.add_node(smi, count=1, traj_count=1)
                     network.add_edge(smiles_list[i - 1], smi, count=1,
@@ -586,6 +586,7 @@ class Network:
 
             # If the current SMILES string is present in the network.
             else:
+                network.node[smi]['count'] += 1
                 if network.has_edge(smiles_list[i - 1], smi):
                     network.edges[smiles_list[i - 1], smi]['count'] += 1
                 else:

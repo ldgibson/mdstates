@@ -191,6 +191,21 @@ class Network:
         cutoff : float
             Cutoff value for the two elements in `atoms`.
         """
+        if not isinstance(atoms, list):
+            raise TypeError("Atoms must be passed in list.")
+        else:
+            pass
+
+        if len(atoms) != 2:
+            raise ValueError("Must pass two atoms.")
+        else:
+            pass
+
+        if cutoff <= 0:
+            raise ValueError("Cutoff must be positive and non-zero.")
+        else:
+            pass
+
         self._cutoff[frozenset(atoms)] = cutoff
         return
 
@@ -296,14 +311,14 @@ class Network:
         smiles = []
         smiles.append(first_smiles)
 
-        for rep in self.replica:
-            for f in range(rep['cmat'].shape[0]):
-                if np.isclose(f, frames, atol=tol).any():
-                    smi = contact_matrix_to_SMILES(rep['cmat'][f, :, :],
-                                                   self.atoms)
-                    smiles.append(smi)
-                else:
-                    pass
+        cmat = self.replica[rep_id]['cmat']
+
+        for f in range(cmat.shape[0]):
+            if np.isclose(f, frames, atol=tol).any():
+                smi = contact_matrix_to_SMILES(cmat[f, :, :], self.atoms)
+                smiles.append(smi)
+            else:
+                pass
 
         reduced_smiles = [smi for smi, _ in groupby(smiles)]
         return reduced_smiles

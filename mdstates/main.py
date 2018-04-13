@@ -48,7 +48,7 @@ class Network:
         self._cutoff = {}
         return
 
-    def addreplica(self, trajectory, topology, **kwargs):
+    def add_replica(self, trajectory, topology, **kwargs):
         """
         Adds a replica to the class object.
 
@@ -114,7 +114,7 @@ class Network:
 
         return
 
-    def removereplica(self, rep_id):
+    def remove_replica(self, rep_id):
         """
         Removes a replica that was added previously.
 
@@ -329,6 +329,7 @@ class Network:
         calculate_all_jp(compiled, len(self.replica) - len(exclude))
         final = prepare_graph(compiled, **kwargs)
 
+        print("Saving network to: {}".format(abspath(filename)))
         self._draw_network(final, filename=filename)
         return
 

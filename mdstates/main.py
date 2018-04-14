@@ -287,7 +287,7 @@ class Network:
         print("{} iterations of Viterbi algorithm.".format(counter))
         return
 
-    def generate_SMILES(self, rep_id, tol=2,
+    def generate_SMILES(self, rep_id, tol=5,
                         first_smiles='O=C1OCCO1.O=C1OCCO1.[Li]'):
         """Generates list of SMILES strings from trajectory.
 

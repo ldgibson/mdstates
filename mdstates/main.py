@@ -1,4 +1,3 @@
-from itertools import groupby
 from os.path import abspath
 
 import mdtraj as md
@@ -10,7 +9,7 @@ from .data import bonds
 from .graphs import calculate_all_jp, combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .molecules import contact_matrix_to_SMILES
-from .smiles import save_unique_SMILES
+from .smiles import remove_consecutive_repeats, save_unique_SMILES
 
 __all__ = ['Network']
 
@@ -287,7 +286,7 @@ class Network:
         print("{} iterations of Viterbi algorithm.".format(counter))
         return
 
-    def generate_SMILES(self, rep_id, tol=2,
+    def generate_SMILES(self, rep_id, min_lifetime, tol=5,
                         first_smiles='O=C1OCCO1.O=C1OCCO1.[Li]'):
         """Generates list of SMILES strings from trajectory.
 
@@ -308,8 +307,12 @@ class Network:
 
         frames = self.frames[rep_id].copy()
 
+        if not frames:
+            return [first_smiles]
+        else:
+            pass
+
         smiles = []
-        smiles.append(first_smiles)
 
         cmat = self.replica[rep_id]['cmat']
 
@@ -320,11 +323,19 @@ class Network:
             else:
                 pass
 
-        reduced_smiles = [smi for smi, _ in groupby(smiles)]
+        reduced_smiles = remove_consecutive_repeats(smiles, min_lifetime)
+
+        if reduced_smiles[0] != first_smiles:
+            reduced_smiles.insert(0, first_smiles)
+        else:
+            pass
+
+        # reduced_smiles = [smi for smi, _ in groupby(smiles)]
         return reduced_smiles
 
     def draw_overall_network(self, filename='overall.png', exclude=[],
-                             SMILES_loc='SMILESimages', **kwargs):
+                             SMILES_loc='SMILESimages', min_lifetime=2,
+                             use_LR=False, **kwargs):
         """Builds networks for all replicas and combines them.
 
         Parameters
@@ -338,7 +349,7 @@ class Network:
             Name of the directory in which SMILES images will be saved.
         """
 
-        self._build_all_networks()
+        self._build_all_networks(min_lifetime)
         print("Saving SMILES images to: {}".format(abspath(SMILES_loc)))
         compiled = self._compile_networks(exclude=exclude)
         self.network = compiled
@@ -346,7 +357,7 @@ class Network:
         final = prepare_graph(compiled, **kwargs)
 
         print("Saving network to: {}".format(abspath(filename)))
-        self._draw_network(final, filename=filename)
+        self._draw_network(final, filename=filename, use_LR=use_LR)
         return
 
     def _generate_pairs(self):
@@ -636,19 +647,27 @@ class Network:
 
         return overall_network
 
-    def _build_all_networks(self):
+    def _build_all_networks(self, min_lifetime):
         """Builds networks for all replicas."""
         for rep_id, rep in enumerate(self.replica):
-            if not rep['network']:
-                smiles_list = self.generate_SMILES(rep_id)
-                rep['network'] = self._build_network(smiles_list)
-            else:
-                pass
+            smiles_list = self.generate_SMILES(rep_id, min_lifetime)
+            rep['network'] = self._build_network(smiles_list)
+            # if not rep['network']:
+            #     smiles_list = self.generate_SMILES(rep_id, min_lifetime)
+            #     rep['network'] = self._build_network(smiles_list)
+            # else:
+            #     pass
         return
 
     def _draw_network(self, nxgraph, filename, layout="dot", write=True,
-                      first_smiles='O=C1OCCO1.O=C1OCCO1.[Li]'):
+                      use_LR=False, first_smiles='O=C1OCCO1.O=C1OCCO1.[Li]'):
         pygraph = to_agraph(nxgraph)
+
+        if use_LR:
+            pygraph.graph_attr['rankdir'] = 'LR'
+        else:
+            pass
+
         pygraph.add_subgraph([first_smiles], rank='source')
         pygraph.layout(layout)
         if write:

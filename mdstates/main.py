@@ -352,6 +352,7 @@ class Network:
         self._build_all_networks(min_lifetime)
         print("Saving SMILES images to: {}".format(abspath(SMILES_loc)))
         compiled = self._compile_networks(exclude=exclude)
+        self.network = compiled
         calculate_all_jp(compiled, len(self.replica) - len(exclude))
         final = prepare_graph(compiled, **kwargs)
 

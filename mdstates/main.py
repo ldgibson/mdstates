@@ -1,4 +1,3 @@
-from itertools import groupby
 from os.path import abspath
 
 import mdtraj as md
@@ -307,7 +306,7 @@ class Network:
         """
 
         frames = self.frames[rep_id].copy()
-        
+
         if not frames:
             return [first_smiles]
         else:

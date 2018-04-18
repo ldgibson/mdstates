@@ -23,7 +23,7 @@ def remove_consecutive_repeats(smiles, min_lifetime):
                 pass
         else:
             pass
-    
+
     return reduced
 
 

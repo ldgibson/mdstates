@@ -3,7 +3,7 @@ import os.path
 import mdtraj as md
 import numpy as np
 
-from ..main import Network
+from ..core import Network
 
 currentdir = os.path.dirname(__file__)
 testdir = os.path.join(currentdir, 'test_cases')

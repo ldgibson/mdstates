@@ -142,8 +142,7 @@ def _combined_graph_edges(G, H):
 
 
 def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
-                  scaler_range=(0, 1), show_labels=False,
-                  image_loc='SMILESimages',
+                  scale=(1, 5), show_labels=False, image_loc='SMILESimages',
                   root_node='O=C1OCCO1.O=C1OCCO1.[Li]'):
     """Prepares a graph for visualization with Graphviz.
 
@@ -162,7 +161,7 @@ def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
     style_edge : bool, optional
         If `True`, then the final graph will use `edge_attr` to style
         edges with `penwidth`. Default is `False`.
-    scaler_range : tuple of int or float, optional
+    scale : tuple of int or float, optional
         Tells the program what range to scale the values in `edge_attr`
         to. Default is (0, 1).
     show_labels : bool
@@ -207,7 +206,7 @@ def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
         else:
             data_range = np.array([data[2] for data
                                    in G.edges.data(edge_attr)])
-        scaler = Scaler(*scaler_range)
+        scaler = Scaler(*scale)
         scaler.set_data_range(data_range.min(), data_range.max())
     else:
         pass

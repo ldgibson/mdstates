@@ -184,18 +184,19 @@ def test_prepare_graph():
     assert not graph2.has_edge(2, 1), "Edge should have been dropped."
 
     # Test `style_edge` flag.
-    graph3 = prepare_graph(G, edge_attr='counts', style_edge=True)
+    graph3 = prepare_graph(G, edge_attr='counts', style_edge=True,
+                           scale=(1, 4))
 
     for n in graph3:
         assert graph3.node[n]['image'] == os.path.join("SMILESimages",
                                                        str(n) + '.png'),\
             "Incorrect image path specified."
 
-    assert_almost_equal(graph3.edges[1, 2]['penwidth'], 1.0,
+    assert_almost_equal(graph3.edges[1, 2]['penwidth'], 4.0,
                         err_msg="Incorrect styling.")
-    assert_almost_equal(graph3.edges[2, 3]['penwidth'], 1 / 3,
+    assert_almost_equal(graph3.edges[2, 3]['penwidth'], 2.0,
                         err_msg="Incorrect styling.")
-    assert_almost_equal(graph3.edges[2, 1]['penwidth'], 0.0,
+    assert_almost_equal(graph3.edges[2, 1]['penwidth'], 1.0,
                         err_msg="Incorrect styling.")
 
     return

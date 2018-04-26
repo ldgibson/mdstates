@@ -286,7 +286,7 @@ class Network:
         print("{} iterations of Viterbi algorithm.".format(counter))
         return
 
-    def generate_SMILES(self, rep_id, min_lifetime, tol=5,
+    def generate_SMILES(self, rep_id, min_lifetime=4, tol=10,
                         first_smiles='O=C1OCCO1.O=C1OCCO1.[Li]'):
         """Generates list of SMILES strings from trajectory.
 
@@ -349,7 +349,11 @@ class Network:
             Name of the directory in which SMILES images will be saved.
         """
 
-        self._build_all_networks(min_lifetime)
+        if 'min_lifetime' in kwargs:
+            self._build_all_networks(min_lifetime=kwargs['min_lifetime'])
+        else:
+            self._build_all_networks()
+
         print("Saving SMILES images to: {}".format(abspath(SMILES_loc)))
         compiled = self._compile_networks(exclude=exclude)
         self.network = compiled
@@ -647,10 +651,10 @@ class Network:
 
         return overall_network
 
-    def _build_all_networks(self, min_lifetime):
+    def _build_all_networks(self, **kwargs):
         """Builds networks for all replicas."""
         for rep_id, rep in enumerate(self.replica):
-            smiles_list = self.generate_SMILES(rep_id, min_lifetime)
+            smiles_list = self.generate_SMILES(rep_id, **kwargs)
             rep['network'] = self._build_network(smiles_list)
             # if not rep['network']:
             #     smiles_list = self.generate_SMILES(rep_id, min_lifetime)

@@ -74,8 +74,11 @@ class Scaler:
         float or list of float
             Transformed value into the user specified scale."""
         if isinstance(data, Number):
+
             if data > self.max_val or data < self.min_val:
                 raise ValueError("{} is out of range.".format(data))
+            elif self.max_val == self.min_val:
+                return self.max_val
             else:
                 return (data - self.min_val) / (self.max_val - self.min_val) *\
                     (self.target_max - self.target_min) + self.target_min
@@ -83,6 +86,9 @@ class Scaler:
             for d in data:
                 if d > self.max_val or data < self.min_val:
                     raise ValueError("{} is out of range.".format(d))
-            return [(d - self.min_val) / (self.max_val - self.min_val) *
-                    (self.target_max - self.target_min) + self.target_min
-                    for d in data]
+            if self.max_val == self.min_val:
+                return [self.max_val for _ in data]
+            else:
+                return [(d - self.min_val) / (self.max_val - self.min_val) *
+                        (self.target_max - self.target_min) + self.target_min
+                        for d in data]

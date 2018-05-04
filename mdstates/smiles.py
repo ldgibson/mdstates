@@ -7,7 +7,26 @@ from rdkit.Chem import Draw
 from rdkit.Chem.Draw import DrawingOptions
 
 
-def remove_consecutive_repeats(smiles, min_lifetime):
+def remove_consecutive_repeats(smiles):
+    true_list = []
+    ref = smiles[0][0]
+    true_list.append(smiles[0])
+
+    for i, smi in enumerate(smiles):
+        if i == 0:
+            continue
+
+        if smi[0] != ref:
+            true_list.append(smi)
+            ref = smi[0]
+
+    # for group in smiles:
+    #     if group not in true_list:
+    #         smiles.remove(group)
+    return true_list
+
+
+def _remove_consecutive_repeats(smiles, min_lifetime):
     groups = groupby(smiles)
     results = [(smi, sum(1 for _ in group)) for smi, group in groups]
 

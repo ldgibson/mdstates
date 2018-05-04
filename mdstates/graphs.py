@@ -130,6 +130,12 @@ def _combined_graph_edges(G, H):
             for key in shared:
                 if isinstance(attr[key], Number):
                     attr.update({key: attr[key] + gdata[key]})
+                elif isinstance(attr[key], list):
+                    new_list = list(set(attr[key] + gdata[key]))
+                    new_list.sort()
+                    attr.update({key: new_list})
+                else:
+                    pass
 
             not_shared = set(gdata) - set(attr)
             attr.update((key, gdata[key]) for key in not_shared)
@@ -202,7 +208,7 @@ def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
     if style_edge:
         if drop_all_below is not None:
             data_range = np.array([data[2] for data in G.edges.data(edge_attr)
-                                   if not data[2] < drop_all_below])
+                                   if data[2] >= drop_all_below])
         else:
             data_range = np.array([data[2] for data
                                    in G.edges.data(edge_attr)])

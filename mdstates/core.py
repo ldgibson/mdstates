@@ -10,6 +10,7 @@ from .graphs import calculate_all_jp, combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .molecules import contact_matrix_to_SMILES
 from .smiles import remove_consecutive_repeats, save_unique_SMILES
+from .util import find_nearest
 
 __all__ = ['Network']
 
@@ -308,7 +309,7 @@ class Network:
         frames = self.frames[rep_id].copy()
 
         if not frames:
-            return [first_smiles]
+            return [(first_smiles, 0)]
         else:
             pass
 
@@ -319,14 +320,15 @@ class Network:
         for f in range(cmat.shape[0]):
             if np.isclose(f, frames, atol=tol).any():
                 smi = contact_matrix_to_SMILES(cmat[f, :, :], self.atoms)
-                smiles.append(smi)
+                frame = find_nearest(f, frames)
+                smiles.append((smi, frame))
             else:
                 pass
 
         reduced_smiles = remove_consecutive_repeats(smiles, min_lifetime)
 
-        if reduced_smiles[0] != first_smiles:
-            reduced_smiles.insert(0, first_smiles)
+        if reduced_smiles[0][0] != first_smiles:
+            reduced_smiles.insert(0, (first_smiles, 0))
         else:
             pass
 
@@ -592,7 +594,9 @@ class Network:
 
         Parameters
         ----------
-        smiles_list : list of str
+        smiles_list : list of tuple of str and int
+            List of tuples containing the SMILES string and the nearest
+            transition frame.
         image_loc : str, optional
             Location of the folder containing all 2D SMILES structures.
 
@@ -605,7 +609,7 @@ class Network:
 
         network = nx.DiGraph()
 
-        for i, smi in enumerate(smiles_list):
+        for i, smi, f in enumerate(smiles_list):
             # If the current SMILES string is missing in the network
             # graph, then add it.
             if not network.has_node(smi):

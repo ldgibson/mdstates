@@ -20,6 +20,27 @@ def loadfile(filename, **kwargs):
     return pd.read_csv(getpath(filename), **kwargs)
 
 
+def find_nearest(n, arr):
+    """Finds nearest value in array.
+    
+    Parameters
+    ----------
+    n : int or float
+    arr : array-like container of int or float
+    
+    Returns
+    -------
+    int or float"""
+
+    if not isinstance(arr, np.ndarray):
+        arr = np.array(arr)
+    else:
+        pass
+
+    idx = (np.abs(arr - n)).argmin()
+    return arr[idx]
+
+
 class Scaler:
     def __init__(self, target_min=0, target_max=1):
         self.target_min = target_min

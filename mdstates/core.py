@@ -6,7 +6,7 @@ from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
 
 from .data import bonds
-from .graphs import calculate_all_jp, combine_graphs, prepare_graph
+from .graphs import combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .molecules import contact_matrix_to_SMILES
 from .smiles import remove_consecutive_repeats, save_unique_SMILES
@@ -623,18 +623,21 @@ class Network:
                     network.add_node(smi, count=1, traj_count=1)
                     network.add_edge(smiles_list[i - 1][0], smi, count=1,
                                      traj_count=1, frames=[])
-                    network.edges[smiles_list[i - 1][0], smi]['frames'].append(f)
+                    network.edges[smiles_list[i - 1][0], smi]['frames']\
+                        .append(f)
 
             # If the current SMILES string is present in the network.
             else:
                 network.node[smi]['count'] += 1
                 if network.has_edge(smiles_list[i - 1], smi):
                     network.edges[smiles_list[i - 1][0], smi]['count'] += 1
-                    network.edges[smiles_list[i - 1][0], smi]['frames'].append(f)
+                    network.edges[smiles_list[i - 1][0], smi]['frames']\
+                        .append(f)
                 else:
                     network.add_edge(smiles_list[i - 1][0], smi, count=1,
                                      traj_count=1, frames=[])
-                    network.edges[smiles_list[i - 1][0], smi]['frames'].append(f)
+                    network.edges[smiles_list[i - 1][0], smi]['frames']\
+                        .append(f)
         return network
 
     def _compile_networks(self, exclude=[]):
@@ -722,7 +725,7 @@ class Network:
         return
 
     def _clean_frames(self, min_lifetime):
-        
+
         for frames in self.frames:
             bad_frames = []
             for i, f in enumerate(frames):

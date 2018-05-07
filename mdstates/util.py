@@ -22,12 +22,12 @@ def loadfile(filename, **kwargs):
 
 def find_nearest(n, arr):
     """Finds nearest value in array.
-    
+
     Parameters
     ----------
     n : int or float
     arr : array-like container of int or float
-    
+
     Returns
     -------
     int or float"""

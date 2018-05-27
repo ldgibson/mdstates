@@ -74,7 +74,7 @@ def test_generate_contact_matrix():
     return
 
 
-def test__generate_pairs():
+def test_generate_pairs():
     net = Network()
     net.add_replica(traj_path, top_path)
 
@@ -152,4 +152,64 @@ def test_decode():
     assert np.all(net.replica[0]['cmat'][:, 1, 2] == 0)
     assert np.all(net.replica[0]['cmat'][:, 0, 2] == 0)
 
+    return
+
+
+def test_generate_SMILES():
+    pass
+    return
+
+
+def test_draw_overall_network():
+    pass
+    return
+
+
+def test_compute_distances():
+    pass
+    return
+
+
+def test_reshape_to_square():
+    pass
+    return
+
+
+def test_build_connections():
+    pass
+    return
+
+
+def test_get_atoms():
+    pass
+    return
+
+
+def test_build_cutoff():
+    pass
+    return
+
+
+def test_bond_distance():
+    pass
+    return
+
+
+def test_find_transition_frames():
+    pass
+    return
+
+
+def test_build_network():
+    pass
+    return
+
+
+def test_compile_networks():
+    pass
+    return
+
+
+def test_build_all_networks():
+    pass
     return

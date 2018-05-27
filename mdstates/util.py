@@ -20,6 +20,27 @@ def loadfile(filename, **kwargs):
     return pd.read_csv(getpath(filename), **kwargs)
 
 
+def find_nearest(n, arr):
+    """Finds nearest value in array.
+
+    Parameters
+    ----------
+    n : int or float
+    arr : array-like container of int or float
+
+    Returns
+    -------
+    int or float"""
+
+    if not isinstance(arr, np.ndarray):
+        arr = np.array(arr)
+    else:
+        pass
+
+    idx = (np.abs(arr - n)).argmin()
+    return arr[idx]
+
+
 class Scaler:
     def __init__(self, target_min=0, target_max=1):
         self.target_min = target_min
@@ -53,8 +74,11 @@ class Scaler:
         float or list of float
             Transformed value into the user specified scale."""
         if isinstance(data, Number):
+
             if data > self.max_val or data < self.min_val:
                 raise ValueError("{} is out of range.".format(data))
+            elif self.max_val == self.min_val:
+                return self.max_val
             else:
                 return (data - self.min_val) / (self.max_val - self.min_val) *\
                     (self.target_max - self.target_min) + self.target_min
@@ -62,6 +86,9 @@ class Scaler:
             for d in data:
                 if d > self.max_val or data < self.min_val:
                     raise ValueError("{} is out of range.".format(d))
-            return [(d - self.min_val) / (self.max_val - self.min_val) *
-                    (self.target_max - self.target_min) + self.target_min
-                    for d in data]
+            if self.max_val == self.min_val:
+                return [self.max_val for _ in data]
+            else:
+                return [(d - self.min_val) / (self.max_val - self.min_val) *
+                        (self.target_max - self.target_min) + self.target_min
+                        for d in data]

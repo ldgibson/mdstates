@@ -6,10 +6,11 @@ from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
 
 from .data import bonds
-from .graphs import calculate_all_jp, combine_graphs, prepare_graph
+from .graphs import combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .molecules import contact_matrix_to_SMILES
 from .smiles import remove_consecutive_repeats, save_unique_SMILES
+from .util import find_nearest
 
 __all__ = ['Network']
 
@@ -283,10 +284,14 @@ class Network:
         # transition occurred and store it into `self.frames`
         self._find_transition_frames()
 
+        # Clean the transition frames such that only relavent reactive
+        # events remain.
+        self._clean_frames(20)
+
         print("{} iterations of Viterbi algorithm.".format(counter))
         return
 
-    def _generate_SMILES(self, rep_id, min_lifetime=6, tol=10,
+    def _generate_SMILES(self, rep_id, tol=10,
                          first_smiles='O=C1OCCO1.O=C1OCCO1.[Li]'):
         """Generates list of SMILES strings from trajectory.
 
@@ -305,10 +310,11 @@ class Network:
             within the specified tolerance of transition frames.
         """
 
-        frames = self.frames[rep_id].copy()
+        frames = np.array(self.frames[rep_id].copy())
 
-        if not frames:
-            return [first_smiles]
+        # if not frames:
+        if frames.size == 0:
+            return [(first_smiles, 0)]
         else:
             pass
 
@@ -316,17 +322,19 @@ class Network:
 
         cmat = self.replica[rep_id]['cmat']
 
-        for f in range(cmat.shape[0]):
-            if np.isclose(f, frames, atol=tol).any():
+        for f in range(len(cmat)):
+            # if np.isclose(frames - f, 10, atol=tol).any():
+            if ((f - frames < tol) & (f - frames >= 0)).any():
                 smi = contact_matrix_to_SMILES(cmat[f, :, :], self.atoms)
-                smiles.append(smi)
+                frame = find_nearest(f, frames)
+                smiles.append((smi, frame))
             else:
                 pass
 
-        reduced_smiles = remove_consecutive_repeats(smiles, min_lifetime)
+        reduced_smiles = remove_consecutive_repeats(smiles)
 
-        if reduced_smiles[0] != first_smiles:
-            reduced_smiles.insert(0, first_smiles)
+        if reduced_smiles[0][0] != first_smiles:
+            reduced_smiles.insert(0, (first_smiles, 0))
         else:
             pass
 
@@ -334,8 +342,8 @@ class Network:
         return reduced_smiles
 
     def draw_overall_network(self, filename='overall.png', exclude=[],
-                             SMILES_loc='SMILESimages', min_lifetime=6,
-                             use_LR=False, **kwargs):
+                             SMILES_loc='SMILESimages', use_LR=False,
+                             **kwargs):
         """Builds networks for all replicas and combines them.
 
         Parameters
@@ -350,11 +358,6 @@ class Network:
         """
 
         kwargs_to_pass = dict()
-        if 'min_lifetime' in kwargs:
-            kwargs_to_pass.update(min_lifetime=kwargs['min_lifetime'])
-        else:
-            pass
-
         if 'tol' in kwargs:
             kwargs_to_pass.update(tol=kwargs['tol'])
         else:
@@ -365,7 +368,7 @@ class Network:
         print("Saving SMILES images to: {}".format(abspath(SMILES_loc)))
         compiled = self._compile_networks(exclude=exclude)
         self.network = compiled
-        calculate_all_jp(compiled, len(self.replica) - len(exclude))
+        # calculate_all_jp(compiled, len(self.replica) - len(exclude))
         final = prepare_graph(compiled, **kwargs)
 
         print("Saving network to: {}".format(abspath(filename)))
@@ -600,7 +603,9 @@ class Network:
 
         Parameters
         ----------
-        smiles_list : list of str
+        smiles_list : list of tuple of str and int
+            List of tuples containing the SMILES string and the nearest
+            transition frame.
         image_loc : str, optional
             Location of the folder containing all 2D SMILES structures.
 
@@ -609,11 +614,11 @@ class Network:
         network : networkx.DiGraph
         """
 
-        save_unique_SMILES(smiles_list)
+        save_unique_SMILES([smi for smi, _ in smiles_list])
 
         network = nx.DiGraph()
 
-        for i, smi in enumerate(smiles_list):
+        for i, (smi, f) in enumerate(smiles_list):
             # If the current SMILES string is missing in the network
             # graph, then add it.
             if not network.has_node(smi):
@@ -622,17 +627,23 @@ class Network:
                     network.add_node(smi, count=1, traj_count=1)
                 else:
                     network.add_node(smi, count=1, traj_count=1)
-                    network.add_edge(smiles_list[i - 1], smi, count=1,
-                                     traj_count=1)
+                    network.add_edge(smiles_list[i - 1][0], smi, count=1,
+                                     traj_count=1, frames=[])
+                    network.edges[smiles_list[i - 1][0], smi]['frames']\
+                        .append(f)
 
             # If the current SMILES string is present in the network.
             else:
                 network.node[smi]['count'] += 1
                 if network.has_edge(smiles_list[i - 1], smi):
-                    network.edges[smiles_list[i - 1], smi]['count'] += 1
+                    network.edges[smiles_list[i - 1][0], smi]['count'] += 1
+                    network.edges[smiles_list[i - 1][0], smi]['frames']\
+                        .append(f)
                 else:
-                    network.add_edge(smiles_list[i - 1], smi, count=1,
-                                     traj_count=1)
+                    network.add_edge(smiles_list[i - 1][0], smi, count=1,
+                                     traj_count=1, frames=[])
+                    network.edges[smiles_list[i - 1][0], smi]['frames']\
+                        .append(f)
         return network
 
     def _compile_networks(self, exclude=[]):
@@ -689,7 +700,8 @@ class Network:
         pygraph.draw(filename)
         return
 
-    def _draw_network_with_graphviz(overall, filename="overall", format='png'):
+    def _draw_network_with_graphviz(self, overall, filename="overall",
+                                    format='png'):
         """Draw with Python Graphviz instead of PyGraphviz."""
         from graphviz import Digraph
         g = Digraph('G', filename='graph.gv', format=format)
@@ -715,5 +727,23 @@ class Network:
         g.node_attr.update(label="")
 
         g.render(filename=filename)
+
+        return
+
+    def _clean_frames(self, min_lifetime):
+
+        for frames in self.frames:
+            bad_frames = []
+            for i, f in enumerate(frames):
+                if f == frames[-1]:
+                    break
+                else:
+                    if frames[i + 1] - f < min_lifetime:
+                        bad_frames.append(f)
+                    else:
+                        pass
+
+            for bad_frame in bad_frames:
+                frames.remove(bad_frame)
 
         return

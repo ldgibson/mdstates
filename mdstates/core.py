@@ -44,6 +44,7 @@ class Network:
         self.network = None
         self.topology = None
 
+        self._first_smiles = None
         self._pairs = []
         self._cutoff = {}
         return
@@ -96,7 +97,7 @@ class Network:
 
         # Set the topology.
         if self.topology is None:
-            self.topology = topology
+            self.topology = md.load(topology)
         else:
             pass
 
@@ -170,6 +171,12 @@ class Network:
             self._build_cutoff(cutoff_frac)
         else:
             pass
+
+        # Check if topology file has been converted to a SMILES string.
+        if self._first_smiles:
+            pass
+        else:
+            self._topology_to_smiles()
 
         for i, rep in enumerate(self.replica):
             if rep['cmat'] is None:
@@ -291,8 +298,7 @@ class Network:
         print("{} iterations of Viterbi algorithm.".format(counter))
         return
 
-    def _generate_SMILES(self, rep_id, tol=10,
-                         first_smiles='O=C1OCCO1.O=C1OCCO1.[Li]'):
+    def _generate_SMILES(self, rep_id, tol=10):
         """Generates list of SMILES strings from trajectory.
 
         Parameters
@@ -314,7 +320,7 @@ class Network:
 
         # if not frames:
         if frames.size == 0:
-            return [(first_smiles, 0)]
+            return [(self._first_smiles, 0)]
         else:
             pass
 
@@ -333,8 +339,8 @@ class Network:
 
         reduced_smiles = remove_consecutive_repeats(smiles)
 
-        if reduced_smiles[0][0] != first_smiles:
-            reduced_smiles.insert(0, (first_smiles, 0))
+        if reduced_smiles[0][0] != self._first_smiles:
+            reduced_smiles.insert(0, (self._first_smiles, 0))
         else:
             pass
 
@@ -683,7 +689,7 @@ class Network:
         return
 
     def _draw_network(self, nxgraph, filename, layout="dot", write=True,
-                      use_LR=False, first_smiles='O=C1OCCO1.O=C1OCCO1.[Li]'):
+                      use_LR=False):
         pygraph = to_agraph(nxgraph)
 
         if use_LR:
@@ -691,7 +697,7 @@ class Network:
         else:
             pass
 
-        pygraph.add_subgraph([first_smiles], rank='source')
+        pygraph.add_subgraph([self._first_smiles], rank='source')
         pygraph.layout(layout)
         if write:
             pygraph.write("input.dot")
@@ -705,9 +711,9 @@ class Network:
         """Draw with Python Graphviz instead of PyGraphviz."""
         from graphviz import Digraph
         g = Digraph('G', filename='graph.gv', format=format)
-        first_smiles = 'O=C1OCCO1.O=C1OCCO1.[Li]'
+        self._first_smiles = 'O=C1OCCO1.O=C1OCCO1.[Li]'
         for n, data in overall.nodes(data=True):
-            if n == first_smiles:
+            if n == self._first_smiles:
                 with g.subgraph(name='top') as top:
                     top.graph_attr.update(rank='source')
                     top.node(n, image=data['image'])
@@ -747,3 +753,16 @@ class Network:
                 frames.remove(bad_frame)
 
         return
+
+    def _topology_to_smiles(self):
+        """Generates the SMILES for the starting point in trajectory."""
+        if self.topology:
+            distances = md.compute_distances(self.topology,
+                                             self._pairs, periodic=self.pbc)
+            distances = self._reshape_to_square(distances)
+            cmat = self._build_connections(distances)
+            self._first_smiles = contact_matrix_to_SMILES(cmat[0, ...], self.atoms)
+        else:
+            raise Exception("Topology file does not exist.")
+        return
+

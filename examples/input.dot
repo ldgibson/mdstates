@@ -1,0 +1,87 @@
+strict digraph "" {
+	graph [bb="0,0,872.09,5058"];
+	node [label="\N"];
+	{
+		graph [rank=source];
+		"O=C1OCCO1.O=C1OCCO1.[Li]"		 [height=5.9318,
+			image="SMILESimages/O=C1OCCO1.O=C1OCCO1.[Li].png",
+			label="",
+			pos="435.55,4844.5",
+			width=5.9318];
+	}
+	"O=C1OCCO1.[CH2]COC([O])=O.[Li]"	 [height=5.9318,
+		image="SMILESimages/O=C1OCCO1.[CH2]COC([O])=O.[Li].png",
+		label="",
+		pos="435.55,4381.4",
+		width=5.9318];
+	"O=C1OCCO1.O=C1OCCO1.[Li]" -> "O=C1OCCO1.[CH2]COC([O])=O.[Li]"	 [pos="e,435.55,4595.2 435.55,4630.9 435.55,4622.4 435.55,4613.8 435.55,4605.3"];
+	"[CH2]C[O+](C([O])=O)C1([O])OCCO1.[Li]"	 [height=5.9318,
+		image="SMILESimages/[CH2]C[O+](C([O])=O)C1([O])OCCO1.[Li].png",
+		label="",
+		pos="435.55,3918.3",
+		width=5.9318];
+	"O=C1OCCO1.[CH2]COC([O])=O.[Li]" -> "[CH2]C[O+](C([O])=O)C1([O])OCCO1.[Li]"	 [pos="e,435.55,4132.2 435.55,4167.8 435.55,4159.3 435.55,4150.7 435.55,4142.2"];
+	"[CH2]COC(=O)OCCOC([O])=O.[Li]"	 [height=5.9318,
+		image="SMILESimages/[CH2]COC(=O)OCCOC([O])=O.[Li].png",
+		label="",
+		pos="435.55,2992.1",
+		width=5.9318];
+	"[Li].[O]C(=O)OCC[O+]1CCOC1=O"	 [height=5.9318,
+		image="SMILESimages/[Li].[O]C(=O)OCC[O+]1CCOC1=O.png",
+		label="",
+		pos="435.55,2529",
+		width=5.9318];
+	"[CH2]COC(=O)OCCOC([O])=O.[Li]" -> "[Li].[O]C(=O)OCC[O+]1CCOC1=O"	 [pos="e,435.55,2742.9 435.55,2778.5 435.55,2770 435.55,2761.4 435.55,2752.9"];
+	"[Li].[O]C(=O)OCCOCCO[C]=O"	 [height=5.9318,
+		image="SMILESimages/[Li].[O]C(=O)OCCOCCO[C]=O.png",
+		label="",
+		pos="435.55,2065.9",
+		width=5.9318];
+	"[Li].[O]C(=O)OCC[O+]1CCOC1=O" -> "[Li].[O]C(=O)OCCOCCO[C]=O"	 [pos="e,435.55,2279.8 435.55,2315.4 435.55,2306.9 435.55,2298.3 435.55,2289.8"];
+	"O=C=O.[CH2]COCCOC([O])=O.[Li]"	 [height=5.9318,
+		image="SMILESimages/O=C=O.[CH2]COCCOC([O])=O.[Li].png",
+		label="",
+		pos="435.55,1602.8",
+		width=5.9318];
+	"[Li].[O]C(=O)OCCOCCO[C]=O" -> "O=C=O.[CH2]COCCOC([O])=O.[Li]"	 [pos="e,435.55,1816.7 435.55,1852.3 435.55,1843.8 435.55,1835.3 435.55,1826.7"];
+	"O=C=O.[CH2]COC1([O])OCCO1.[Li]"	 [height=5.9318,
+		image="SMILESimages/O=C=O.[CH2]COC1([O])OCCO1.[Li].png",
+		label="",
+		pos="435.55,3455.2",
+		width=5.9318];
+	"[CH2]C[O+](C([O])=O)C1([O])OCCO1.[Li]" -> "O=C=O.[CH2]COC1([O])OCCO1.[Li]"	 [pos="e,435.55,3669.1 435.55,3704.7 435.55,3696.2 435.55,3687.6 435.55,3679.1"];
+	"C1COCCO1.O=C=O.O=C=O.[Li]"	 [height=5.9318,
+		image="SMILESimages/C1COCCO1.O=C=O.O=C=O.[Li].png",
+		label="",
+		pos="213.55,676.64",
+		width=5.9318];
+	"C1COCCO1.[Li].[O]C(=O)O[C]=O"	 [height=5.9318,
+		image="SMILESimages/C1COCCO1.[Li].[O]C(=O)O[C]=O.png",
+		label="",
+		pos="213.55,213.55",
+		width=5.9318];
+	"C1COCCO1.O=C=O.O=C=O.[Li]" -> "C1COCCO1.[Li].[O]C(=O)O[C]=O"	 [dir=both,
+		pos="s,206.81,463.05 e,206.81,427.06 206.8,452.93 206.8,447.68 206.8,442.41 206.8,437.16"];
+	"C1COCCO1.[Li].[O]C(=O)O[C]=O" -> "C1COCCO1.O=C=O.O=C=O.[Li]"	 [pos="e,220.28,463.05 220.28,427.06 220.3,435.66 220.3,444.31 220.29,452.93",
+		style=invis];
+	"O=C=O.[Li].[O]C(=O)[O+]1CCOCC1"	 [height=5.9318,
+		image="SMILESimages/O=C=O.[Li].[O]C(=O)[O+]1CCOCC1.png",
+		label="",
+		pos="213.55,1139.7",
+		width=5.9318];
+	"O=C=O.[Li].[O]C(=O)[O+]1CCOCC1" -> "C1COCCO1.O=C=O.O=C=O.[Li]"	 [pos="e,213.55,890.5 213.55,926.15 213.55,917.62 213.55,909.07 213.55,900.52"];
+	"O=C=O.[Li].[O]C(=O)[O+]1CCOCC1" -> "O=C=O.[CH2]COCCOC([O])=O.[Li]"	 [dir=both,
+		pos="s,311.34,1329.8 e,348.56,1407.4 315.71,1338.9 325.23,1358.6 334.84,1378.6 344.25,1398.4"];
+	"O=C=O.[CH2]COCCOC([O])=O.[Li]" -> "O=C=O.[Li].[O]C(=O)[O+]1CCOCC1"	 [pos="e,300.42,1334.9 337.8,1412.8 326.81,1390.1 315.64,1366.8 304.74,1344",
+		style=invis];
+	"[CH2]COCC[O+](C([O])=O)C([O])=O.[Li]"	 [height=5.9318,
+		image="SMILESimages/[CH2]COCC[O+](C([O])=O)C([O])=O.[Li].png",
+		label="",
+		pos="658.55,1139.7",
+		width=5.9318];
+	"O=C=O.[CH2]COCCOC([O])=O.[Li]" -> "[CH2]COCC[O+](C([O])=O)C([O])=O.[Li]"	 [pos="e,560.39,1329.7 522.8,1407.8 533.68,1385 544.89,1361.7 555.98,1338.8",
+		style=invis];
+	"[CH2]COCC[O+](C([O])=O)C([O])=O.[Li]" -> "O=C=O.[CH2]COCCOC([O])=O.[Li]"	 [dir=both,
+		pos="s,571.25,1334.9 e,533.71,1412.8 566.91,1344 557.41,1363.8 547.72,1383.9 538.11,1403.7"];
+	"O=C=O.[CH2]COC1([O])OCCO1.[Li]" -> "[CH2]COC(=O)OCCOC([O])=O.[Li]"	 [pos="e,435.55,3206 435.55,3241.6 435.55,3233.1 435.55,3224.5 435.55,3216"];
+}

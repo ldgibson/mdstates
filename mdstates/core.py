@@ -761,8 +761,8 @@ class Network:
                                              self._pairs, periodic=self.pbc)
             distances = self._reshape_to_square(distances)
             cmat = self._build_connections(distances)
-            self._first_smiles = contact_matrix_to_SMILES(cmat[0, ...], self.atoms)
+            self._first_smiles = contact_matrix_to_SMILES(cmat[0, ...],
+                                                          self.atoms)
         else:
             raise Exception("Topology file does not exist.")
         return
-

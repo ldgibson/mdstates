@@ -5,3 +5,22 @@
 MD-States is a python package for the analysis and visualization of networks (e.g. chemical reaction networks) from molecular dynamics (MD) trajectories. This package is developed and maintained by members of the [Pfaendtner Research Group](http://prg.washington.edu/) in the Department of Chemical Engineering at the University of Washington in Seattle.
 
 Documentation coming soon.
+
+## Python Dependencies
+  - python>=3.6
+  - mdtraj
+  - rdkit
+  - numpy
+  - pandas
+  - networkx>=2.1
+  - pygraphviz
+  - aggdraw
+
+## Installation
+```
+$ git clone github.com/ldgibson/mdstates.git
+$ cd mdstates
+$ conda env create  # Make sure the 'environment.yml' is present.
+$ source activate mdstates
+$ python setup.py install
+```

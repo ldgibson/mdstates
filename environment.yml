@@ -1,4 +1,4 @@
-name: mdstates-env
+name: mdstates
 channels:
   - rdkit
   - conda-forge

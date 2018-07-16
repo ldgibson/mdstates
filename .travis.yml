@@ -23,7 +23,7 @@ install:
   # Replace dep1 dep2 ... with your dependencies
   - conda env create
   # - conda create -q -n test-environment python=3.6 networkx pandas numpy cython rdkit pygraphviz flake8 pytest pytest-cov coveralls
-  - source activate mdstates-env
+  - source activate mdstates
   - pip install $PIP_DEPS
   - pip install -e .
 

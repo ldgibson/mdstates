@@ -18,7 +18,7 @@ Documentation coming soon.
 
 ## Installation
 ```
-$ git clone github.com/ldgibson/mdstates.git
+$ git clone https://github.com/ldgibson/mdstates.git
 $ cd mdstates
 $ conda env create  # Make sure the 'environment.yml' is present.
 $ source activate mdstates

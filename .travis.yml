@@ -1,5 +1,9 @@
 language: python
 
+branches:
+  only:
+    - master
+
 env:
   global:
     - PIP_DEPS="pytest coveralls pytest-cov flake8"

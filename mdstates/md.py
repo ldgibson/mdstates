@@ -1,4 +1,5 @@
 """
+Workflow:
  1. Get list of nodes.
  2. Specify level of theory and duration of run.
  3. Generate directories for each node.

@@ -295,7 +295,6 @@ class Network:
         # events remain.
         self._clean_frames(20)
 
-        print("{} iterations of Viterbi algorithm.".format(counter))
         return
 
     def _generate_SMILES(self, rep_id, tol=10):

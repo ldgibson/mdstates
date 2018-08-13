@@ -86,7 +86,8 @@ class Network:
                     "A trajectory from that location is already loaded."
 
         self.replica.append({'traj': None, 'cmat': None, 'path': None,
-                             'processed': False, 'network': None})
+                             'processed': False, 'network': None,
+                             'smiles': None})
 
         self.replica[-1]['traj'] = md.load(trajectory, top=topology,
                                            **kwargs)
@@ -343,7 +344,7 @@ class Network:
         else:
             pass
 
-        # reduced_smiles = [smi for smi, _ in groupby(smiles)]
+        self.replica[rep_id]['smiles'] = reduced_smiles
         return reduced_smiles
 
     def draw_overall_network(self, filename='overall.png', exclude=[],

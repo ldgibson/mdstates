@@ -155,6 +155,19 @@ def test_decode():
     return
 
 
+def test_chemical_equations():
+    net = Network()
+    smiles_list = ['A.B.C', 'A.B.D', 'A.E.D']
+
+    reactions = net.chemical_equations(-1, smiles_list)
+    assert len(reactions) == 2, "List of equations not correct."
+
+    assert reactions[0] == 'C --> D', "Incorrect first equation."
+    assert reactions[1] == 'B --> E', "Incorrect second equation."
+
+    return
+
+
 def test_generate_SMILES():
     pass
     return

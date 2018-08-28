@@ -9,7 +9,8 @@ from .data import bonds
 from .graphs import combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .molecules import contact_matrix_to_SMILES
-from .smiles import remove_consecutive_repeats, save_unique_SMILES
+from .smiles import (remove_consecutive_repeats, save_unique_SMILES,
+                     find_reaction)
 from .util import find_nearest
 
 __all__ = ['Network']
@@ -380,6 +381,38 @@ class Network:
         print("Saving network to: {}".format(abspath(filename)))
         self._draw_network(final, filename=filename, use_LR=use_LR)
         return
+
+    def chemical_equations(self, rep_id, *args):
+        """
+        Converts a list of SMILES strings to chemical equations.
+
+        Parameters
+        ----------
+        rep_id : int
+            Replica ID number. If equal to `-1`, then ignores the value and
+            takes list from `*args`.
+
+        Returns
+        -------
+        list of str
+            List containing chemical equations that include only
+            reacting species.
+        """
+
+        if rep_id == -1 and args:
+            smiles_list = args[0]
+        else:
+            assert not self.replica[rep_id]['smiles'], "SMILES list is empty."
+            smiles_list = self.replica[rep_id]['smiles']
+
+        chem_eq_list = []
+        for i, smi in enumerate(smiles_list):
+            if i == 0:
+                continue
+            chem_eq_list.append(find_reaction(smiles_list[i - 1], smi))
+
+        return chem_eq_list
+
 
     def _generate_pairs(self):
         """

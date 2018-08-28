@@ -413,7 +413,6 @@ class Network:
 
         return chem_eq_list
 
-
     def _generate_pairs(self):
         """
         Generates the atom pairs for interatomic distance calculations.

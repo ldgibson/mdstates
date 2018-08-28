@@ -7,6 +7,136 @@ from rdkit.Chem import Draw
 from rdkit.Chem.Draw import DrawingOptions
 
 
+def get_mol_dict(smiles_list):
+    """
+    Returns only unique species and their counts.
+
+    Parameters
+    ----------
+    smiles_list : list of str
+        List containing molecular species, allows for repeats.
+
+    Returns
+    -------
+    list of tuple
+        Each tuple contains the name of a unique molecular species
+        and the number of occurrences.
+    """
+    if not smiles_list:
+        raise Exception("No molecules found.")
+    groups = groupby(smiles_list)
+    return [(sum(1 for _ in group), smi) for smi, group in groups]
+
+
+def to_chemical_equation(reactant_list, product_list=None):
+    """
+    Prints the chemical equation.
+
+    Parameters
+    ----------
+    reactant_list : list of tuples
+        Each tuple contains the name of a unique molecular species
+        and the number of occurrences.
+    product_list : list of tuples, optional
+        If left empty, the function will only print the first half of the
+        chemical equation.
+
+    Returns
+    -------
+    str
+        Either full or half of a chemical equation.
+    """
+    for count, mol in reactant_list:
+        if not mol:
+            raise Exception("Molecule missing, string is empty.")
+        else:
+            pass
+
+    for count, mol in product_list:
+        if not mol:
+            raise Exception("Molecule missing, string is empty.")
+        else:
+            pass
+
+    mol1_list = []
+    for mol in reactant_list:
+        if mol[0] == 1:
+            mol1_list.append(mol[1])
+        else:
+            mol1_list.append("{} {}".format(*mol))
+    if product_list:
+        mol2_list = []
+        for mol in product_list:
+            if mol[0] == 1:
+                mol2_list.append(mol[1])
+            else:
+                mol2_list.append("{} {}".format(*mol))
+
+        return " + ".join(mol1_list) + " --> " + " + ".join(mol2_list)
+    else:
+        return " + ".join(mol1_list)
+
+
+def remove_common_molecules(reactants, products):
+    """
+    Removes common species between two lists leaving only reacting species.
+
+    Parameters
+    ----------
+    reactants, products : list of str
+        List containing strings all molecular species.
+
+    Returns
+    -------
+    tuple of str
+        Reduced lists for both reactants and products such that only species
+        that participate in the reaction remain.
+    """
+    reduced_react = reactants.copy()
+    reduced_prod = products.copy()
+
+    reduced_react.sort()
+    reduced_prod.sort()
+
+    if reduced_react == reduced_prod:
+        raise Exception("Reactants and products are the same.")
+    else:
+        pass
+
+    for mol in reactants:
+        if mol in reduced_prod:
+            reduced_prod.remove(mol)
+            reduced_react.remove(mol)
+
+    return (reduced_react, reduced_prod)
+
+
+def find_reaction(smi1, smi2):
+    """
+    Writes chemical equation that shows the change from reactants to products.
+
+    Parameters
+    ----------
+    smi1, smi2 : str
+        SMILES strings.
+
+    Returns
+    -------
+    str
+        Chemical equation that contains only species that participate in the
+        chemical reaction.
+    """
+    react = smi1.split('.')
+    prod = smi2.split('.')
+
+    reduced_react, reduced_prod = remove_common_molecules(react, prod)
+
+    react_dict = get_mol_dict(reduced_react)
+    prod_dict = get_mol_dict(reduced_prod)
+
+    return to_chemical_equation(react_dict, prod_dict)
+
+
 def remove_consecutive_repeats(smiles):
     """
     Removes consecutive repeats from a list.

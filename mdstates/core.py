@@ -178,7 +178,7 @@ class Network:
         if self._first_smiles:
             pass
         else:
-            self._topology_to_smiles()
+            self._traj_to_smiles()
 
         for i, rep in enumerate(self.replica):
             if rep['cmat'] is None:
@@ -786,15 +786,12 @@ class Network:
 
         return
 
-    def _topology_to_smiles(self):
+    def _traj_to_smiles(self):
         """Generates the SMILES for the starting point in trajectory."""
-        if self.topology:
-            distances = md.compute_distances(self.topology,
-                                             self._pairs, periodic=self.pbc)
-            distances = self._reshape_to_square(distances)
-            cmat = self._build_connections(distances)
-            self._first_smiles = contact_matrix_to_SMILES(cmat[0, ...],
-                                                          self.atoms)
-        else:
-            raise Exception("Topology file does not exist.")
+        distances = md.compute_distances(self.replica[0]['traj'][0],
+                                         self._pairs, periodic=self.pbc)
+        distances = self._reshape_to_square(distances)
+        cmat = self._build_connections(distances)
+        self._first_smiles = contact_matrix_to_SMILES(cmat[0, ...],
+                                                      self.atoms)
         return

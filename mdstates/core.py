@@ -1,9 +1,10 @@
-from os.path import abspath
+from os.path import abspath, dirname, join
 
 import mdtraj as md
 import networkx as nx
 from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
+import pybel
 
 from .data import bonds
 from .graphs import combine_graphs, prepare_graph
@@ -50,7 +51,7 @@ class Network:
         self._cutoff = {}
         return
 
-    def add_replica(self, trajectory, topology, **kwargs):
+    def add_replica(self, trajectory, topology=None, **kwargs):
         """
         Adds a replica to the class object.
 
@@ -83,16 +84,20 @@ class Network:
                 "All topologies must be the same."
 
             for rep in self.replica:
-                assert rep['path'] != trajectory,\
+                assert rep['path'] != abspath(trajectory),\
                     "A trajectory from that location is already loaded."
 
         self.replica.append({'traj': None, 'cmat': None, 'path': None,
                              'processed': False, 'network': None,
                              'smiles': None})
+        if topology:
+            pass
+        else:
+            topology = self._traj_to_topology(abspath(trajectory), 'xyz')
 
         self.replica[-1]['traj'] = md.load(trajectory, top=topology,
                                            **kwargs)
-        self.replica[-1]['path'] = trajectory
+        self.replica[-1]['path'] = abspath(trajectory)
 
         # Add a sub-list for frames.
         self.frames.append([])
@@ -795,3 +800,18 @@ class Network:
         self._first_smiles = contact_matrix_to_SMILES(cmat[0, ...],
                                                       self.atoms)
         return
+
+    def _traj_to_topology(self, traj, format='xyz'):
+        """Converts the first frame in trajectory to the topology file."""
+        mol = next(pybel.readfile(format=format, filename=traj))
+
+        # Grab the name of the file without extension
+        # from the absolute path.
+        filename = traj.split('/')[-1].split('.')[:-1]
+        # Add back any '.' to the filename if they existed.
+        filename = '.'.join(filename)
+        top_name = filename + '_topology.pdb'
+        parent_dir = dirname(traj)
+        topology_path = join(parent_dir, top_name)
+        mol.write('pdb', topology_path, overwrite=True)
+        return topology_path

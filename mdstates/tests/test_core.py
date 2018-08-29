@@ -1,4 +1,4 @@
-import os.path
+import os
 
 import mdtraj as md
 import numpy as np
@@ -165,6 +165,25 @@ def test_chemical_equations():
     assert reactions[0] == 'C --> D', "Incorrect first equation."
     assert reactions[1] == 'B --> E', "Incorrect second equation."
 
+    return
+
+
+def test_traj_to_topology():
+    net1 = Network()
+    net1.add_replica(traj_path, topology=top_path)
+    table1, _ = net1.topology.top.to_dataframe()
+    atoms1 = table1['element'].tolist()
+
+    net2 = Network()
+    net2.add_replica(traj_path)
+    table2, _ = net2.topology.top.to_dataframe()
+    atoms2 = table2['element'].tolist()
+
+    assert atoms1 == atoms2, "Atom lists are not equivalent."
+
+    new_top_name = os.path.join(testdir, 'test_case_topology.pdb')
+    if os.path.exists(new_top_name):
+        os.remove(new_top_name)
     return
 
 

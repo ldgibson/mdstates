@@ -225,7 +225,7 @@ class Network:
 
     def decode(self, n=10, states=[0, 1], start_p=[0.5, 0.5],
                trans_p=[[0.999, 0.001], [0.001, 0.999]],
-               emission_p=[[0.60, 0.40], [0.40, 0.60]]):
+               emission_p=[[0.60, 0.40], [0.40, 0.60]], min_lifetime=20):
         """Uses Viterbi algorithm to clean the signal for each bond.
 
         Prior to processing each individual index in the contact
@@ -300,7 +300,7 @@ class Network:
 
         # Clean the transition frames such that only relavent reactive
         # events remain.
-        self._clean_frames(20)
+        self._clean_frames(min_lifetime=min_lifetime)
 
         return
 

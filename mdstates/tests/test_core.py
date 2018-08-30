@@ -157,7 +157,7 @@ def test_decode():
 
 def test_chemical_equations():
     net = Network()
-    smiles_list = ['A.B.C', 'A.B.D', 'A.E.D']
+    smiles_list = [('A.B.C', 0), ('A.B.D', 10), ('A.E.D', 50)]
 
     reactions = net.chemical_equations(-1, smiles_list)
     assert len(reactions) == 2, "List of equations not correct."

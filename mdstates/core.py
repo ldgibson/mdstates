@@ -419,10 +419,10 @@ class Network:
             smiles_list = self.replica[rep_id]['smiles']
 
         chem_eq_list = []
-        for i, smi in enumerate(smiles_list):
+        for i, (smi, _) in enumerate(smiles_list):
             if i == 0:
                 continue
-            chem_eq_list.append(find_reaction(smiles_list[i - 1], smi))
+            chem_eq_list.append(find_reaction(smiles_list[i - 1][0], smi))
 
         return chem_eq_list
 

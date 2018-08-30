@@ -323,16 +323,21 @@ class Network:
         """
 
         frames = np.array(self.frames[rep_id].copy())
+        cmat = self.replica[rep_id]['cmat']
 
         # if not frames:
         if frames.size == 0:
-            return [(self._first_smiles, 0)]
+            num_frames = len(cmat)
+            last_smiles = contact_matrix_to_SMILES(cmat[-1, :, :], self.atoms)
+            if last_smiles == self._first_smiles:
+                return [(self._first_smiles, 0)]
+            else:
+                return [(self._first_smiles, 0),
+                        (last_smiles, num_frames - 1)]
         else:
             pass
 
         smiles = []
-
-        cmat = self.replica[rep_id]['cmat']
 
         for f in range(len(cmat)):
             # if np.isclose(frames - f, 10, atol=tol).any():
@@ -342,6 +347,9 @@ class Network:
                 smiles.append((smi, frame))
             else:
                 pass
+
+        last_smiles = contact_matrix_to_SMILES(cmat[-1, :, :], self.atoms)
+        smiles.append((last_smiles, len(cmat) - 1))
 
         reduced_smiles = remove_consecutive_repeats(smiles)
 

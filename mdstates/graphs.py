@@ -198,7 +198,7 @@ def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
         graph.node[n]['image'] = os.path.join(image_loc, str(n) + '.png')
         try:
             node_energy = get_vacuum_energy(conn, n)
-        except:
+        except Exception:
             node_energy = 0
 
         if show_labels:

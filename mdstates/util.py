@@ -1,8 +1,21 @@
-from os.path import abspath, dirname, join
 from numbers import Number
+from os.path import abspath, dirname, join
+import sqlite3
 
 import numpy as np
 import pandas as pd
+
+
+def db_connect(db_name):
+    con = sqlite3.connect(db_name)
+    return con
+
+
+def get_vacuum_energy(con, smiles):
+    cur = con.cursor()
+    cur.execute("SELECT energy_pm6 FROM vacuum WHERE smiles = ?", smiles)
+    E_pm6 = cur.fetchone()[0]
+    return E_pm6
 
 
 def getpath(filename):

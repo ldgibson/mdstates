@@ -5,7 +5,7 @@ import os
 import networkx as nx
 import numpy as np
 
-from .util import Scaler
+from .util import db_connect, get_vacuum_energy, Scaler
 
 # __all__ = ['combined_graph_nodes', 'combined_graph_edges', 'combine_graphs']
 
@@ -190,20 +190,24 @@ def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
         pass
 
     graph = nx.DiGraph()
-
-    # first_node = [n for n, data in G.nodes.data('rank') if data == 0][0]
-    # graph.add_node(first_node, rank=0)
-
-    # graph.add_nodes_from([n for n in G.nodes(data=False) if n != first_node])
     graph.add_nodes_from(G.nodes(data=False))
+
+    conn = db_connect('energies.db')
 
     for n in graph.nodes:
         graph.node[n]['image'] = os.path.join(image_loc, str(n) + '.png')
+        try:
+            node_energy = get_vacuum_energy(conn, n)
+        except:
+            node_energy = 0
+
         if show_labels:
-            graph.node[n]['label'] = str(n)
+            graph.node[n]['label'] = str(node_energy)
             graph.node[n]['labelloc'] = 'b'
         else:
             graph.node[n]['label'] = ''
+
+    conn.close()
 
     if style_edge:
         if drop_all_below is not None:
@@ -216,15 +220,6 @@ def prepare_graph(G, edge_attr=None, drop_all_below=None, style_edge=False,
         scaler.set_data_range(data_range.min(), data_range.max())
     else:
         pass
-
-    # if drop_all_below is not None:
-    #     for n, data in list(G.nodes(data=edge_attr)):
-    #         if data < drop_all_below:
-    #             graph.remove_node(n)
-    #         else:
-    #             pass
-    # else:
-    #     pass
 
     for u, v in G.edges:
         if drop_all_below is not None:

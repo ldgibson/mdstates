@@ -18,7 +18,9 @@ from ase.md.langevin import Langevin
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 
 
-CP2K.command = "mpirun -n 1 -genv OMP_NUM_THREADS 1 /gscratch/pfaendtner/codes/cp2k/cp2k/cp2k/exe/Linux-x86-64-intel/cp2k_shell.psmp"
+CP2K.command = "mpirun -n 1 -genv OMP_NUM_THREADS 1" +\
+    "/gscratch/pfaendtner/codes/cp2k/cp2k/cp2k/" +\
+    "exe/Linux-x86-64-intel/cp2k_shell.psmp"
 
 
 _inp_pm6="""
@@ -31,9 +33,7 @@ _inp_pm6="""
     ! Charge and multiplicity
 
     &QS
-       ! use the GPW method (i.e. pseudopotential based calculations with the Gaussian and Plane Waves scheme).
        METHOD PM6
-       ! default threshold for numerics ~ roughly numerical accuracy of the total energy per electron,
        ! sets reasonable values for all other thresholds.
        EPS_DEFAULT 1.0E-10 
        ! used for MD, the method used to generate the initial guess.
@@ -41,7 +41,7 @@ _inp_pm6="""
     &END
 
     &POISSON
-       PERIODIC XYZ ! the default, gas phase systems should have 'NONE' and a wavelet solver
+       PERIODIC XYZ
     &END
 
     &PRINT
@@ -50,7 +50,6 @@ _inp_pm6="""
        &END E_DENSITY_CUBE
     &END
 
-    ! use the OT METHOD for robust and efficient SCF, suitable for all non-metallic systems.
     &SCF                              
       SCF_GUESS ATOMIC ! can be used to RESTART an interrupted calculation
       MAX_SCF 20
@@ -58,7 +57,6 @@ _inp_pm6="""
       &OT
         ! an accurate preconditioner suitable also for larger systems
         PRECONDITIONER FULL_SINGLE_INVERSE
-        ! the most robust choice (DIIS might sometimes be faster, but not as stable).
         MINIMIZER DIIS
       &END OT
       &OUTER_SCF ! repeat the inner SCF cycle 10 times
@@ -177,7 +175,7 @@ def get_node_energies(network, steps=10000, T=300, xc='PM6',
         is set to `PM6`, then this argument is ignored.
     cell : list of int or float, optional
         Sets the simulation box size if specified.
-    
+
     Returns
     -------
     node_energies : dict

@@ -363,7 +363,7 @@ class Network:
 
     def draw_overall_network(self, filename='overall.png', exclude=[],
                              SMILES_loc='SMILESimages', use_LR=False,
-                             **kwargs):
+                             use_graphviz=False, **kwargs):
         """Builds networks for all replicas and combines them.
 
         Parameters
@@ -392,7 +392,10 @@ class Network:
         final = prepare_graph(compiled, root_node=self._first_smiles, **kwargs)
 
         print("Saving network to: {}".format(abspath(filename)))
-        self._draw_network(final, filename=filename, use_LR=use_LR)
+        if use_graphviz:
+            self._draw_network_with_graphviz(final, filename=filename)
+        else:
+            self._draw_network(final, filename=filename, use_LR=use_LR)
         return
 
     def chemical_equations(self, rep_id, *args):
@@ -756,7 +759,7 @@ class Network:
         """Draw with Python Graphviz instead of PyGraphviz."""
         from graphviz import Digraph
         g = Digraph('G', filename='graph.gv', format=format)
-        self._first_smiles = 'O=C1OCCO1.O=C1OCCO1.[Li]'
+        # self._first_smiles = 'O=C1OCCO1.O=C1OCCO1.[Li]'
         for n, data in overall.nodes(data=True):
             if n == self._first_smiles:
                 with g.subgraph(name='top') as top:

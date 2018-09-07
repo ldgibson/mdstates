@@ -7,6 +7,10 @@ env:
 python:
   - '3.6'
 
+cache:
+  - pip
+  - conda
+
 install:
   - sudo apt-get update
   # We do this conditionally because it saves us some downloading if the

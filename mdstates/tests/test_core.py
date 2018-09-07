@@ -70,6 +70,13 @@ def test_generate_contact_matrix():
 
     assert net.replica[0]['cmat'].shape ==\
         (n_frames, net.n_atoms, net.n_atoms)
+    
+    net = Network()
+    net.add_replica(traj_path, top_path)
+    net.generate_contact_matrix(ignore='Cl')
+
+    assert (net.replica[0]['cmat'][:, [4, 5], :] == 0).all() and\
+           (net.replica[0]['cmat'][:, :, [4, 5]] == 0).all()
 
     return
 

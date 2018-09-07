@@ -1,3 +1,5 @@
+from numbers import Number
+from itertools import combinations
 from os.path import abspath, dirname, join
 
 import mdtraj as md
@@ -79,9 +81,9 @@ class Network:
             If the trajectory path matches a previously loaded replica.
         """
         if len(self.replica) > 0:
-            assert self.replica[-1]['traj'].topology ==\
-                md.load(topology).topology,\
-                "All topologies must be the same."
+#             assert self.replica[-1]['traj'].topology ==\
+#                 md.load(topology).topology,\
+#                 "All topologies must be the same."
 
             for rep in self.replica:
                 assert rep['path'] != abspath(trajectory),\
@@ -145,7 +147,7 @@ class Network:
         del self.replica[rep_id]
         return
 
-    def generate_contact_matrix(self, cutoff_frac=1.3):
+    def generate_contact_matrix(self, cutoff_frac=1.3, ignore=None):
         """
         Converts each trajectory frame to a contact matrix.
 
@@ -165,6 +167,12 @@ class Network:
             used for each atom pair. A `cutoff_frac` of 1.3 implies
             that for each atom pair, the cutoff distance will be 1.3
             times the equilibrium bond distance. Default is 1.3.
+        ignore : str or list of str or int, optional
+            If specified, all specified atoms will not be tracked in
+            the contact matrix and will appear as unbonded, or 0, in
+            all frames. Can be useful for species that are not
+            covalently bonded, such as ions. Must pass either an atomic
+            symbol, list of atomic symbols, or list of atom id's.
         """
 
         # Check if atom pairs have been determined.
@@ -185,11 +193,42 @@ class Network:
         else:
             self._traj_to_smiles()
 
+        # Build list of atoms to ignore.
+        ignore_list = []
+        if ignore:
+            # Ex: ignore='Li'
+            if isinstance(ignore, str):
+                ignore_list = [idx for idx, atom in enumerate(self.atoms)
+                               if atom == ignore]
+            # Ex: ignore=[0, 2, 4] or ignore=['Li', 'H']
+            elif isinstance(ignore, list):
+                for atom in ignore:
+                    if isinstance(atom, str):
+                        sym_ignore_list.append([idx for idx, atom in
+                                                enumerate(self.atoms)
+                                                if atom == atom_sym])
+                        for atom_id in sym_ignore_list:
+                            ignore_list.append(atom_id)
+                    elif isinstance(atom, Number):
+                        ignore_list.append(atom)
+                    else:
+                        raise Exception("Must pass atom symbol or " +
+                                        "index for it to be ignored.")
+            else:
+                raise Exception("'ignore' must be a string or a list.")
+        else:
+            pass
+
         for i, rep in enumerate(self.replica):
             if rep['cmat'] is None:
                 distances = self._compute_distances(i)
                 distances = self._reshape_to_square(distances)
                 rep['cmat'] = self._build_connections(distances)
+                if ignore:
+                    rep['cmat'][:, ignore_list, :] = 0
+                    rep['cmat'][:, :, ignore_list] = 0
+                else:
+                    pass
             else:
                 pass
 
@@ -430,9 +469,9 @@ class Network:
         """
         Generates the atom pairs for interatomic distance calculations.
         """
-        for i in range(self.n_atoms - 1):
-            for j in range(i + 1, self.n_atoms):
-                self._pairs.append([i, j])
+
+        for i, j in combinations(range(self.n_atoms), 2):
+            self._pairs.append([i, j])
         return
 
     def _compute_distances(self, rep_id):

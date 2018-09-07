@@ -132,7 +132,7 @@ def fast_viterbi(obs, states, start_p, trans_p, emission_p):
     trans_p : list of list of float
         Probabilities of transitioning from one hidden state to
         another.
-    emission_p : list of of list of float
+    emission_p : list of list of float
         Probabilities of emitting an observable given the present
         hidden state.
 
@@ -154,7 +154,7 @@ def fast_viterbi(obs, states, start_p, trans_p, emission_p):
             V[t, st] = max_tr_prob + np.log10(emission_p[st, obs[t]])
             prev_states[t, st] = np.where(V[t - 1, :] +
                                           np.log10(trans_p[:, st]) ==
-                                          max_tr_prob)
+                                          max_tr_prob)[0][0]
 
     optimal_path = np.zeros(len(obs), dtype=int)
 
@@ -162,7 +162,7 @@ def fast_viterbi(obs, states, start_p, trans_p, emission_p):
     max_final_prob = V[-1, :].max()
 
     # Get most probable state and its backtrack.
-    optimal_path[-1] = np.where(V[-1, :] == max_final_prob)
+    optimal_path[-1] = np.where(V[-1, :] == max_final_prob)[0][0]
     previous = optimal_path[-1]
 
     # Follow the each backtrack from the saved paths.

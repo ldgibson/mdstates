@@ -1,6 +1,7 @@
 from os.path import abspath, dirname, join
 
 import mdtraj as md
+from multiprocessing import Pool
 import networkx as nx
 from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
@@ -225,7 +226,8 @@ class Network:
 
     def decode(self, n=10, states=[0, 1], start_p=[0.5, 0.5],
                trans_p=[[0.999, 0.001], [0.001, 0.999]],
-               emission_p=[[0.60, 0.40], [0.40, 0.60]], min_lifetime=20):
+               emission_p=[[0.60, 0.40], [0.40, 0.60]], min_lifetime=20,
+               cores=28):
         """Uses Viterbi algorithm to clean the signal for each bond.
 
         Prior to processing each individual index in the contact
@@ -275,6 +277,8 @@ class Network:
             if rep['processed']:
                 pass
             else:
+                p = Pool(cores)
+                p.map(viterbi)
                 ignore_list = generate_ignore_list(rep['cmat'], n)
 
                 for i in range(self.n_atoms - 1):

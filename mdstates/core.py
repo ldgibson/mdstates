@@ -389,7 +389,7 @@ class Network:
         compiled = self._compile_networks(exclude=exclude)
         self.network = compiled
         # calculate_all_jp(compiled, len(self.replica) - len(exclude))
-        final = prepare_graph(compiled, **kwargs)
+        final = prepare_graph(compiled, root_node=self._first_smiles, **kwargs)
 
         print("Saving network to: {}".format(abspath(filename)))
         self._draw_network(final, filename=filename, use_LR=use_LR)

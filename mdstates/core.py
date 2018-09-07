@@ -81,10 +81,6 @@ class Network:
             If the trajectory path matches a previously loaded replica.
         """
         if len(self.replica) > 0:
-#             assert self.replica[-1]['traj'].topology ==\
-#                 md.load(topology).topology,\
-#                 "All topologies must be the same."
-
             for rep in self.replica:
                 assert rep['path'] != abspath(trajectory),\
                     "A trajectory from that location is already loaded."
@@ -204,9 +200,9 @@ class Network:
             elif isinstance(ignore, list):
                 for atom in ignore:
                     if isinstance(atom, str):
-                        sym_ignore_list.append([idx for idx, atom in
-                                                enumerate(self.atoms)
-                                                if atom == atom_sym])
+                        sym_ignore_list = [idx for idx, at in
+                                           enumerate(self.atoms)
+                                           if at == atom]
                         for atom_id in sym_ignore_list:
                             ignore_list.append(atom_id)
                     elif isinstance(atom, Number):

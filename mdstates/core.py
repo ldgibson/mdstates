@@ -454,7 +454,7 @@ class Network:
         if rep_id == -1 and args:
             smiles_list = args[0]
         else:
-            assert not self.replica[rep_id]['smiles'], "SMILES list is empty."
+            assert self.replica[rep_id]['smiles'], "SMILES list is empty."
             smiles_list = self.replica[rep_id]['smiles']
 
         chem_eq_list = []

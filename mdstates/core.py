@@ -3,6 +3,7 @@ from itertools import combinations
 from os.path import abspath, dirname, join
 
 import mdtraj as md
+from multiprocessing import Pool
 import networkx as nx
 from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
@@ -10,7 +11,7 @@ import pybel
 
 from .data import bonds
 from .graphs import combine_graphs, prepare_graph
-from .hmm import generate_ignore_list, viterbi
+from .hmm import generate_ignore_list, viterbi, viterbi_wrapper
 from .molecules import contact_matrix_to_SMILES
 from .smiles import (remove_consecutive_repeats, save_unique_SMILES,
                      find_reaction)
@@ -260,7 +261,8 @@ class Network:
 
     def decode(self, n=10, states=[0, 1], start_p=[0.5, 0.5],
                trans_p=[[0.999, 0.001], [0.001, 0.999]],
-               emission_p=[[0.60, 0.40], [0.40, 0.60]], min_lifetime=20):
+               emission_p=[[0.60, 0.40], [0.40, 0.60]], min_lifetime=20,
+               cores=4):
         """Uses Viterbi algorithm to clean the signal for each bond.
 
         Prior to processing each individual index in the contact
@@ -304,12 +306,11 @@ class Network:
         if type(emission_p) is not np.ndarray:
             emission_p = np.array(emission_p)
 
-        counter = 0
-
         for rep in self.replica:
             if rep['processed']:
                 pass
             else:
+                run_indices = []
                 ignore_list = generate_ignore_list(rep['cmat'], n)
 
                 for i in range(self.n_atoms - 1):
@@ -319,11 +320,22 @@ class Network:
                         elif [i, j] in ignore_list[1]:
                             rep['cmat'][:, i, j] = 1
                         else:
-                            counter += 1
-                            rep['cmat'][:, i, j] =\
-                                viterbi(rep['cmat'][:, i, j],
-                                        states, start_p,
-                                        trans_p, emission_p)
+                            if cores == 1:
+                                rep['cmat'][:, i, j] =\
+                                    viterbi(rep['cmat'][:, i, j],
+                                            states, start_p,
+                                            trans_p, emission_p)
+                            else:
+                                run_indices.append([i, j,
+                                                    rep['cmat'][:, i, j]])
+
+                if cores > 1:
+                    p = Pool(cores)
+                    results = p.map(viterbi_wrapper, run_indices)
+                    for i, j, result in results:
+                        rep['cmat'][:, i, j] = result
+                else:
+                    pass
 
                 # Mark that this replica's contact matrix
                 # has been processed.

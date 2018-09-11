@@ -1,6 +1,6 @@
 import numpy as np
 
-__all__ = ['generate_ignore_list', 'viterbi']
+__all__ = ['generate_ignore_list', 'viterbi', 'viterbi_wrapper']
 
 
 def generate_ignore_list(cmat, n):
@@ -118,6 +118,19 @@ def viterbi(obs, states, start_p, trans_p, emission_p):
     return optimal_path
 
 
+def viterbi_wrapper(inp_params):
+    states = np.array([0, 1])
+    start_p = np.array([0.5, 0.5])
+    trans_p = np.array([[0.999, 0.001], [0.001, 0.999]])
+    emission_p = np.array([[0.6, 0.4], [0.4, 0.6]])
+
+    i = inp_params[0]
+    j = inp_params[1]
+    obs = inp_params[2]
+
+    return (i, j, viterbi(obs, states, start_p, trans_p, emission_p))
+
+
 def fast_viterbi(obs, states, start_p, trans_p, emission_p):
     """Algorithm used to decode a signal and find the optimal path.
 
@@ -132,7 +145,7 @@ def fast_viterbi(obs, states, start_p, trans_p, emission_p):
     trans_p : list of list of float
         Probabilities of transitioning from one hidden state to
         another.
-    emission_p : list of of list of float
+    emission_p : list of list of float
         Probabilities of emitting an observable given the present
         hidden state.
 
@@ -154,7 +167,7 @@ def fast_viterbi(obs, states, start_p, trans_p, emission_p):
             V[t, st] = max_tr_prob + np.log10(emission_p[st, obs[t]])
             prev_states[t, st] = np.where(V[t - 1, :] +
                                           np.log10(trans_p[:, st]) ==
-                                          max_tr_prob)
+                                          max_tr_prob)[0][0]
 
     optimal_path = np.zeros(len(obs), dtype=int)
 
@@ -162,7 +175,7 @@ def fast_viterbi(obs, states, start_p, trans_p, emission_p):
     max_final_prob = V[-1, :].max()
 
     # Get most probable state and its backtrack.
-    optimal_path[-1] = np.where(V[-1, :] == max_final_prob)
+    optimal_path[-1] = np.where(V[-1, :] == max_final_prob)[0][0]
     previous = optimal_path[-1]
 
     # Follow the each backtrack from the saved paths.

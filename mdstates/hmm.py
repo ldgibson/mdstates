@@ -1,6 +1,6 @@
 import numpy as np
 
-__all__ = ['generate_ignore_list', 'viterbi']
+__all__ = ['generate_ignore_list', 'viterbi', 'viterbi_wrapper']
 
 
 def generate_ignore_list(cmat, n):
@@ -116,6 +116,19 @@ def viterbi(obs, states, start_p, trans_p, emission_p):
         previous = V[t + 1][previous]["prev"]
 
     return optimal_path
+
+
+def viterbi_wrapper(inp_params):
+    states = np.array([0, 1])
+    start_p = np.array([0.5, 0.5])
+    trans_p = np.array([[0.999, 0.001], [0.001, 0.999]])
+    emission_p = np.array([[0.6, 0.4], [0.4, 0.6]])
+
+    i = inp_params[0]
+    j = inp_params[1]
+    obs = inp_params[2]
+
+    return (i, j, viterbi(obs, states, start_p, trans_p, emission_p))
 
 
 def fast_viterbi(obs, states, start_p, trans_p, emission_p):

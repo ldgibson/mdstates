@@ -93,7 +93,7 @@ def test_generate_contact_matrix():
            (net.replica[0]['cmat'][:, :, 4] == 0).all() and\
            (net.replica[0]['cmat'][:, [1, 2, 3], :] == 0).all() and\
            (net.replica[0]['cmat'][:, :, [1, 2, 3]] == 0).all(),\
-           "Ignore feature is not working properly with lists."
+        "Ignore feature is not working properly with lists."
     return
 
 

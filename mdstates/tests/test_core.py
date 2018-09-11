@@ -71,6 +71,29 @@ def test_generate_contact_matrix():
     assert net.replica[0]['cmat'].shape ==\
         (n_frames, net.n_atoms, net.n_atoms)
 
+    net = Network()
+    net.add_replica(traj_path, top_path)
+    net.generate_contact_matrix(ignore='Cl')
+
+    assert (net.replica[0]['cmat'][:, [4, 5], :] == 0).all() and\
+           (net.replica[0]['cmat'][:, :, [4, 5]] == 0).all()
+
+    net = Network()
+    net.add_replica(traj_path, top_path)
+    net.generate_contact_matrix(ignore=[4, 5])
+
+    assert (net.replica[0]['cmat'][:, [4, 5], :] == 0).all() and\
+           (net.replica[0]['cmat'][:, :, [4, 5]] == 0).all()
+
+    net = Network()
+    net.add_replica(traj_path, top_path)
+    net.generate_contact_matrix(ignore=[4, 'H'])
+
+    assert (net.replica[0]['cmat'][:, 4, :] == 0).all() and\
+           (net.replica[0]['cmat'][:, :, 4] == 0).all() and\
+           (net.replica[0]['cmat'][:, [1, 2, 3], :] == 0).all() and\
+           (net.replica[0]['cmat'][:, :, [1, 2, 3]] == 0).all(),\
+        "Ignore feature is not working properly with lists."
     return
 
 

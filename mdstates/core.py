@@ -291,7 +291,8 @@ class Network:
                                             states, start_p,
                                             trans_p, emission_p)
                             else:
-                                run_indices.append([i, j, rep['cmat'][:, i, j]])
+                                run_indices.append([i, j,
+                                                    rep['cmat'][:, i, j]])
 
                 if cores > 1:
                     p = Pool(cores)

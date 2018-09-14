@@ -84,7 +84,7 @@ class Scaler:
                     (self.target_max - self.target_min) + self.target_min
         elif isinstance(data, list) or isinstance(data, np.ndarray):
             for d in data:
-                if d > self.max_val or data < self.min_val:
+                if d > self.max_val or d < self.min_val:
                     raise ValueError("{} is out of range.".format(d))
             if self.max_val == self.min_val:
                 return [self.max_val for _ in data]

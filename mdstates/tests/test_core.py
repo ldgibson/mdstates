@@ -1,8 +1,10 @@
-import os
 from collections import Counter
+import shutil
+import os
 
 import mdtraj as md
 import numpy as np
+import networkx as nx
 
 from ..core import Network
 
@@ -244,6 +246,35 @@ def test_get_atoms():
     return
 
 
+def test_build_network():
+    test_list = [('C', 0), ('O', 6), ('C', 11),
+                 ('CC', 20), ('CCC', 34)]
+    true_net = nx.DiGraph()
+    true_net.add_node('C', count=2, traj_count=1)
+    true_net.add_node('O', count=1, traj_count=1)
+    true_net.add_node('CC', count=1, traj_count=1)
+    true_net.add_node('CCC', count=1, traj_count=1)
+    true_net.add_edge('C', 'O', count=1, traj_count=1, frames=[6])
+    true_net.add_edge('O', 'C', count=1, traj_count=1, frames=[11])
+    true_net.add_edge('C', 'CC', count=1, traj_count=1, frames=[20])
+    true_net.add_edge('CC', 'CCC', count=1, traj_count=1, frames=[34])
+
+    net = Network()
+    test_net = net._build_network(test_list)
+    shutil.rmtree('SMILESimages')
+
+    for node, data in true_net.nodes(data=True):
+        assert node in test_net.nodes
+        for d in data:
+            assert data[d] == test_net.nodes[node][d]
+
+    for u, v, data in true_net.edges(data=True):
+        assert (u, v) in test_net.edges
+        for d in data:
+            assert data[d] == test_net.edges[(u, v)][d]
+    return
+
+
 def test_generate_SMILES():
     pass
     return
@@ -270,11 +301,6 @@ def test_bond_distance():
 
 
 def test_find_transition_frames():
-    pass
-    return
-
-
-def test_build_network():
     pass
     return
 

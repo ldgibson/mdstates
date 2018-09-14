@@ -1,4 +1,5 @@
 import os
+from collections import Counter
 
 import mdtraj as md
 import numpy as np
@@ -210,6 +211,39 @@ def test_traj_to_topology():
     return
 
 
+def test_build_connections():
+    net = Network()
+    net.atoms = ['H', 'H']
+    net.n_atoms = 2
+    net.set_cutoff(['H', 'H'], 1.2)
+    dist = np.array([[[0, 1.3], [0, 0]], [[0, 1.0], [0, 0]]])
+    cmat = net._build_connections(dist)
+    assert cmat[0, 0, 1] == 0, "Nonbonded cutoff not working."
+    assert cmat[1, 0, 1] == 1, "Bonded cutoff not working."
+    return
+
+
+def test_reshape_to_square():
+    net = Network()
+    net.n_atoms = 3
+    linear = np.array([[1, 2, 3], [4, 5, 6]])
+    square = net._reshape_to_square(linear)
+    true = np.array([[[0, 1, 2], [0, 0, 3], [0, 0, 0]],
+                     [[0, 4, 5], [0, 0, 6], [0, 0, 0]]])
+    assert np.all(square == true), "Not reshaping correctly."
+    return
+
+
+def test_get_atoms():
+    net = Network()
+    assert not net.atoms, "Atom list should be empty."
+    net.add_replica(traj_path, top_path)
+    true = Counter(['C', 'H', 'H', 'H', 'Cl', 'Cl'])
+    test = Counter(net.atoms)
+    assert true == test, "Incorrect atoms list."
+    return
+
+
 def test_generate_SMILES():
     pass
     return
@@ -221,21 +255,6 @@ def test_draw_overall_network():
 
 
 def test_compute_distances():
-    pass
-    return
-
-
-def test_reshape_to_square():
-    pass
-    return
-
-
-def test_build_connections():
-    pass
-    return
-
-
-def test_get_atoms():
     pass
     return
 

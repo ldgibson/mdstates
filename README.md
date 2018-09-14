@@ -7,13 +7,13 @@ MD-States is a python package for the analysis and visualization of networks (e.
 Documentation coming soon.
 
 ## Python Dependencies
-  - python>=3.6
-  - mdtraj
-  - rdkit
-  - networkx>=2.1
-  - graphviz>=2.4
-  - pygraphviz
-  - aggdraw
+  - python (>=3.6)
+  - mdtraj (>=1.9.1)
+  - rdkit (>=2017.09.3)
+  - networkx (>=2.1)
+  - graphviz (>=2.38)
+  - pygraphviz (>=1.4rc1)
+  - aggdraw (>=1.3.4.dev0)
 
 ## Installation
 ```

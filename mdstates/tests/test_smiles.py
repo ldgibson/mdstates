@@ -1,5 +1,8 @@
+from collections import Counter
+
 from ..smiles import (get_mol_dict, remove_common_molecules,
-                      to_chemical_equation, find_reaction)
+                      to_chemical_equation, find_reaction,
+                      remove_consecutive_repeats, uniqueSMILES)
 
 
 def test_get_mol_dict():
@@ -80,4 +83,22 @@ def test_find_reaction():
         "Reactants are wrong."
     assert eq_list[1] == 'O=C=O + 2 O' or eq_list[1] == '2 O + O=C=O',\
         "Products are wrong."
+    return
+
+
+def test_remove_consecutive_repeats():
+    test_list = ['a', 'a', 'a', 'b', 'c', 'c', 'a']
+
+    true_after = ['a', 'b', 'c', 'a']
+    test_after = remove_consecutive_repeats(test_list)
+    assert true_after == test_after, "Lists not the same."
+    return
+
+
+def test_uniqueSMILES():
+    test_list = ['a', 'a', 'a', 'b', 'c', 'c', 'a']
+
+    true_after = Counter(['a', 'b', 'c'])
+    test_after = Counter(uniqueSMILES(test_list))
+    assert true_after == test_after, "Lists not the same."
     return

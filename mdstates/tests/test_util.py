@@ -24,6 +24,7 @@ def test_set_data_range():
     assert scaler.max_val == 4, "Maximum value incorrect."
     return
 
+
 def test_transform():
     scaler = Scaler()
     scaler.set_data_range(0, 4)

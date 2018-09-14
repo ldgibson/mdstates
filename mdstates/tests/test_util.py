@@ -2,7 +2,7 @@ from os.path import abspath, dirname, join
 
 from numpy.testing import assert_almost_equal
 
-from ..util import getpath, Scaler
+from ..util import getpath, Scaler, find_nearest
 
 
 def test_getpath():
@@ -14,6 +14,14 @@ def test_getpath():
         'Incorrect path provided.'
 
     return
+
+
+def test_find_nearest():
+    test_list = [0, 5, 10]
+    pool = [3, 4, 5, 6]
+    for n in pool:
+        val = find_nearest(n, test_list)
+        assert val == 5
 
 
 def test_set_data_range():

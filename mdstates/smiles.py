@@ -166,27 +166,6 @@ def remove_consecutive_repeats(smiles):
     return true_list
 
 
-def _remove_consecutive_repeats(smiles, min_lifetime):
-    """Deprecated"""
-    groups = groupby(smiles)
-    results = [(smi, sum(1 for _ in group)) for smi, group in groups]
-
-    reduced = []
-
-    for smi, count in results:
-        if count >= min_lifetime:
-            if not reduced:
-                reduced.append(smi)
-            elif smi != reduced[-1]:
-                reduced.append(smi)
-            else:
-                pass
-        else:
-            pass
-
-    return reduced
-
-
 def uniqueSMILES(smiles_list):
     """Finds all unique SMILES in a list.
 
@@ -199,7 +178,6 @@ def uniqueSMILES(smiles_list):
     unique : list of str
         All unique SMILES strings in `smiles_list`.
     """
-
     return frozenset(smiles_list)
 
 

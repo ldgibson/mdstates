@@ -11,17 +11,8 @@ std::vector<int> decoder(std::vector<int> obs, const int num_frames) {
     float emission_p[2][2] = { { 0.60, 0.40 },
                                { 0.40, 0.60 } };
 
-    const int sz = obs.size();
-
-    // float* V = NULL;
-    // int* prev = NULL;
-    // V = new float[num_frames][2];
-    // prev = new int[num_frames][2];
     float(*V)[2] = new float[num_frames][2];
     int(*prev)[2] = new int[num_frames][2];
-    // float V[num_frames][2] = {{}};
-    // int prev[num_frames][2] = {{}};
-
 
     for (int st = 0; st < 2; st++) {
             V[0][st] = log10(start_p[st] * emission_p[st][obs[0]]);

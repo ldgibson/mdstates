@@ -121,16 +121,16 @@ def viterbi(obs, states, start_p, trans_p, emission_p):
 
 
 def viterbi_wrapper(inp_params):
-    states = np.array([0, 1])
-    start_p = np.array([0.5, 0.5])
-    trans_p = np.array([[0.999, 0.001], [0.001, 0.999]])
-    emission_p = np.array([[0.6, 0.4], [0.4, 0.6]])
+    # states = np.array([0, 1])
+    # start_p = np.array([0.5, 0.5])
+    # trans_p = np.array([[0.999, 0.001], [0.001, 0.999]])
+    # emission_p = np.array([[0.6, 0.4], [0.4, 0.6]])
 
     i = inp_params[0]
     j = inp_params[1]
     obs = inp_params[2]
 
-    return (i, j, decoder_cpp(obs))  #, states, start_p, trans_p, emission_p))
+    return (i, j, decoder_cpp(obs))  # , states, start_p, trans_p, emission_p))
 
 
 def fast_viterbi(obs, states, start_p, trans_p, emission_p):

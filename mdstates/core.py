@@ -11,7 +11,8 @@ import pybel
 
 from .data import bonds
 from .graphs import combine_graphs, prepare_graph
-from .hmm import generate_ignore_list, viterbi, viterbi_wrapper
+from .hmm import generate_ignore_list, viterbi_wrapper  # , viterbi
+from .hmm_cython import decoder_cpp
 from .molecules import contact_matrix_to_SMILES
 from .smiles import (remove_consecutive_repeats, save_unique_SMILES,
                      find_reaction)
@@ -323,8 +324,8 @@ class Network:
                             if cores == 1:
                                 rep['cmat'][:, i, j] =\
                                     decoder_cpp(rep['cmat'][:, i, j])
-                                                # states, start_p,
-                                                # trans_p, emission_p)
+                                # states, start_p,
+                                # trans_p, emission_p)
                             else:
                                 run_indices.append([i, j,
                                                     rep['cmat'][:, i, j]])

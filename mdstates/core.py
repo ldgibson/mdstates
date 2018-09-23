@@ -322,9 +322,9 @@ class Network:
                         else:
                             if cores == 1:
                                 rep['cmat'][:, i, j] =\
-                                    viterbi(rep['cmat'][:, i, j],
-                                            states, start_p,
-                                            trans_p, emission_p)
+                                    decoder_cpp(rep['cmat'][:, i, j])
+                                                # states, start_p,
+                                                # trans_p, emission_p)
                             else:
                                 run_indices.append([i, j,
                                                     rep['cmat'][:, i, j]])

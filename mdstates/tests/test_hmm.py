@@ -2,6 +2,7 @@ import numpy as np
 
 from ..hmm import (generate_ignore_list, viterbi, viterbi_wrapper,
                    fast_viterbi)
+from ..hmm_cython import decoder_cpp
 
 
 def test_generate_ignore_list():
@@ -75,5 +76,20 @@ def test_fast_viterbi():
     emission_p = np.array([[0.6, 0.4], [0.4, 0.6]])
 
     test = fast_viterbi(obs, states, start_p, trans_p, emission_p)
+    assert np.where(np.diff(test) == 1)[0][0] + 1 == 100
+    return
+
+
+def test_decoder_cpp():
+    obs = np.concatenate([np.zeros(100, dtype=int), np.ones(50, dtype=int)])
+    obs[[75, 80, 83]] = 1
+    obs[[128, 141]] = 0
+
+    # states = np.array([0, 1])
+    # start_p = np.array([0.5, 0.5])
+    # trans_p = np.array([[0.999, 0.001], [0.001, 0.999]])
+    # emission_p = np.array([[0.6, 0.4], [0.4, 0.6]])
+
+    test = decoder_cpp(obs)
     assert np.where(np.diff(test) == 1)[0][0] + 1 == 100
     return

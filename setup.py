@@ -18,7 +18,7 @@ with open(ver_file) as f:
 ext_modules = [Extension(
                name="mdstates.hmm_cython",
                sources=["mdstates/hmm_cython.pyx", "mdstates/hmm.cpp"],
-               include_dirs=["/Users/ldgibson/Development/mdstates/mdstates/.", np.get_include()],
+               # include_dirs=["/Users/ldgibson/Development/mdstates/mdstates/.", np.get_include()],
                extra_compile_args=["-std=c++11"],
                language="c++",
                )]

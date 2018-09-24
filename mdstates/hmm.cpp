@@ -4,12 +4,28 @@
 #include "hmm.h"
 
 
-std::vector<int> decoder(std::vector<int> obs, const int num_frames) {
-    float start_p[2] = { 0.5, 0.5 };
-    float trans_p[2][2] = { { 0.999, 0.001 },
-                            { 0.001, 0.999 } };
-    float emission_p[2][2] = { { 0.60, 0.40 },
-                               { 0.40, 0.60 } };
+std::vector<int> decoder(std::vector<int> obs, const int num_frames,
+                         std::vector<float> start_p,
+                         std::vector<std::vector<float>> trans_p,
+                         std::vector<std::vector<float>> emission_p) {
+    // float start_p[2] = { 0.5, 0.5 };
+    // float trans_p[2][2] = { { 0.999, 0.001 },
+                            // { 0.001, 0.999 } };
+    // float emission_p[2][2] = { { 0.60, 0.40 },
+                               // { 0.40, 0.60 } };
+
+    // float start_p[2] = {start_p_val, float(1.0 - start_p_val)};
+    // float trans_p[2][2];
+    // trans_p[0][0] = trans_p_val;
+    // trans_p[1][1] = trans_p_val;
+    // trans_p[0][1] = 1.0 - trans_p_val;
+    // trans_p[1][0] = 1.0 - trans_p_val;
+
+    // float emission_p[2][2];
+    // emission_p[0][0] = emission_p_val;
+    // emission_p[1][1] = emission_p_val;
+    // emission_p[0][1] = 1.0 - emission_p_val;
+    // emission_p[1][0] = 1.0 - emission_p_val;
 
     float(*V)[2] = new float[num_frames][2];
     int(*prev)[2] = new int[num_frames][2];
@@ -35,7 +51,6 @@ std::vector<int> decoder(std::vector<int> obs, const int num_frames) {
                 }
             }
         }
-        // printf("t = %d\n", t);
     }
     std::vector <int> optimal_path;
     float max_final_prob = std::max(V[num_frames - 1][0], V[num_frames - 1][1]);

@@ -86,10 +86,10 @@ def test_decoder_cpp():
     obs[[128, 141]] = 0
 
     # states = np.array([0, 1])
-    # start_p = np.array([0.5, 0.5])
-    # trans_p = np.array([[0.999, 0.001], [0.001, 0.999]])
-    # emission_p = np.array([[0.6, 0.4], [0.4, 0.6]])
+    start_p = np.array([0.5, 0.5])
+    trans_p = np.array([[0.999, 0.001], [0.001, 0.999]])
+    emission_p = np.array([[0.6, 0.4], [0.4, 0.6]])
 
-    test = decoder_cpp(obs)
+    test = decoder_cpp(obs, start_p, trans_p, emission_p)
     assert np.where(np.diff(test) == 1)[0][0] + 1 == 100
     return

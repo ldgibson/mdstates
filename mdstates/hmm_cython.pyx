@@ -10,6 +10,23 @@ cdef extern from "hmm.h":
 
 
 def decoder_cpp(obs_list, start_p, trans_p, emission_p):
+    """Viterbi algorithm for decoding noisy signal
+
+    Parameters
+    ----------
+    obs_list : array-like
+    start_p : array-like
+        Probability of starting in a particular state.
+    trans_p : array-like
+        Probability of transitioning from one state to another.
+    emission_p : array-like
+        Probability of emitting one state given its hidden state.
+
+    Returns
+    -------
+    list
+        Cleaned signal with the highest probability of matching the
+        observed data."""
 
     if type(start_p) is not np.ndarray:
         start_p = np.array(start_p)

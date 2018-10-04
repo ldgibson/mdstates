@@ -4,9 +4,7 @@ import numpy as np
 
 cdef extern from "hmm.h":
     vector[int] decoder(vector[int] obs, const int num_frames,
-                        vector[float] start_p,
-                        vector[vector[float]] trans_p,
-                        vector[vector[float]] emission_p)
+                        float start_p[2], float trans_p[2][2], float emission_p[2][2])
 
 
 def decoder_cpp(obs_list, start_p, trans_p, emission_p):
@@ -37,16 +35,16 @@ def decoder_cpp(obs_list, start_p, trans_p, emission_p):
     
     length = len(obs_list)
 
-    cdef vector[float] cstart_p = vector[float](2)
+    cdef float cstart_p[2]
     for i in range(2):
         cstart_p[i] = start_p[i]
 
-    cdef vector[vector[float]] ctrans_p = vector[vector[float]](2, vector[float](2))
+    cdef float ctrans_p[2][2]
     for i in range(2):
         for j in range(2):
             ctrans_p[i][j] = trans_p[i, j]
 
-    cdef vector[vector[float]] cemission_p = vector[vector[float]](2, vector[float](2))
+    cdef float cemission_p[2][2]
     for i in range(2):
         for j in range(2):
             cemission_p[i][j] = emission_p[i, j]

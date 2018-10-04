@@ -6,6 +6,7 @@ from Cython.Build import cythonize
 import numpy as np
 
 PACKAGES = find_packages()
+# os.environ["CC"] = "gcc-8"
 
 # Get version and release info, which is all stored in shablona/version.py
 ver_file = os.path.join('mdstates', 'version.py')

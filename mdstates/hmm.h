@@ -2,8 +2,6 @@
 #define DECODER
 
 std::vector<int> decoder(std::vector<int> obs, const int num_frames, 
-                         std::vector<float> start_p,
-                         std::vector<std::vector<float>> trans_p,
-                         std::vector<std::vector<float>> emission_p);
+                         float start_p[2], float trans_p[2][2], float emission_p[2][2]);
 
 #endif

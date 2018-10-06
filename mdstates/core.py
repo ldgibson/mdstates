@@ -9,7 +9,7 @@ from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
 import pybel
 
-from .data import bonds
+from .data import bonds, radii
 from .graphs import combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi_wrapper  # , viterbi
 from .hmm_cython import decoder_cpp
@@ -652,19 +652,31 @@ class Network:
         LookupError
             If the atom pair is not present in the database.
         """
-        pair = []
-        pair.append(str(atom1) + '-' + str(atom2))
-        pair.append(str(atom2) + '-' + str(atom1))
-        loc_bool = [x in bonds.index for x in pair]
-        if any(loc_bool):
-            idx = loc_bool.index(True)
-            return float(bonds.loc[pair[idx], 'distance']) * 0.1 * frac
-        else:
-            raise LookupError(pair[0] + " was not found in cutoff " +
-                              "database. Please manually add it to " +
-                              "the cutoff dictionary using " +
-                              "Network.set_cutoff() and then rerun " +
-                              "Network.generate_contact_matrix().")
+        try:
+            r1 = radii.loc[atom1, 'single']
+        except(Exception):
+            raise Exception(atom1 + ' does not have a covalent' +
+                            ' radius in database.')
+        try:
+            r2 = radii.loc[atom2, 'single']
+        except(Exception):
+            raise Exception(atom2 + ' does not have a covalent' +
+                            ' radius in database.')
+        bond_distance = (r1 + r2) / 1000 * frac
+        return bond_distance
+        # pair = []
+        # pair.append(str(atom1) + '-' + str(atom2))
+        # pair.append(str(atom2) + '-' + str(atom1))
+        # loc_bool = [x in bonds.index for x in pair]
+        # if any(loc_bool):
+            # idx = loc_bool.index(True)
+            # return float(bonds.loc[pair[idx], 'distance']) * 0.1 * frac
+        # else:
+            # raise LookupError(pair[0] + " was not found in cutoff " +
+                              # "database. Please manually add it to " +
+                              # "the cutoff dictionary using " +
+                              # "Network.set_cutoff() and then rerun " +
+                              # "Network.generate_contact_matrix().")
 
     def _find_transition_frames(self):
         """Finds transitions in the processed contact matrix.

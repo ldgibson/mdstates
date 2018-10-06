@@ -263,7 +263,7 @@ class Network:
     def decode(self, n=10, states=[0, 1], start_p=[0.5, 0.5],
                trans_p=[[0.999, 0.001], [0.001, 0.999]],
                emission_p=[[0.60, 0.40], [0.40, 0.60]], min_lifetime=20,
-               cores=1):
+               cores=4):
         """Uses Viterbi algorithm to clean the signal for each bond.
 
         Prior to processing each individual index in the contact
@@ -307,39 +307,63 @@ class Network:
         if type(emission_p) is not np.ndarray:
             emission_p = np.array(emission_p)
 
-        for rep in self.replica:
+        if cores > len(self.replica):
+            cores = len(self.replica)
+        else:
+            pass
+
+        replica_args = []
+
+        for rep_id, rep in enumerate(self.replica):
             if rep['processed']:
-                pass
+                continue
             else:
-                run_indices = []
-                ignore_list = generate_ignore_list(rep['cmat'], n)
+                pass
 
-                for i in range(self.n_atoms - 1):
-                    for j in range(i + 1, self.n_atoms):
-                        if [i, j] in ignore_list[0]:
-                            rep['cmat'][:, i, j] = 0
-                        elif [i, j] in ignore_list[1]:
-                            rep['cmat'][:, i, j] = 1
+            run_indices = []
+            ignore_list = generate_ignore_list(rep['cmat'], n)
+
+            for i in range(self.n_atoms - 1):
+                for j in range(i + 1, self.n_atoms):
+                    if [i, j] in ignore_list[0]:
+                        rep['cmat'][:, i, j] = 0
+                    elif [i, j] in ignore_list[1]:
+                        rep['cmat'][:, i, j] = 1
+                    else:
+                        if cores == 1:
+                            rep['cmat'][:, i, j] =\
+                                decoder_cpp(rep['cmat'][:, i, j],
+                                            start_p, trans_p, emission_p)
                         else:
-                            if cores == 1:
-                                rep['cmat'][:, i, j] =\
-                                    decoder_cpp(rep['cmat'][:, i, j],
-                                                start_p, trans_p, emission_p)
-                            else:
-                                run_indices.append([i, j,
-                                                    rep['cmat'][:, i, j]])
+                            run_indices.append([rep_id, i, j,
+                                                rep['cmat'][:, i, j]])
 
-                if cores > 1:
-                    p = Pool(cores)
-                    results = p.map(viterbi_wrapper, run_indices)
-                    for i, j, result in results:
-                        rep['cmat'][:, i, j] = result
-                else:
-                    pass
+            replica_args.append(run_indices)
+            # if cores > 1:
+                # p = Pool(cores)
+                # results = p.map(viterbi_wrapper, run_indices)
+                # for i, j, result in results:
+                    # rep['cmat'][:, i, j] = result
+            # else:
+                # pass
 
-                # Mark that this replica's contact matrix
-                # has been processed.
-                rep['processed'] = True
+            # Mark that this replica's contact matrix
+            # has been processed.
+            rep['processed'] = True
+
+        if cores > len(replica_args):
+            cores = len(replica_args)
+        else:
+            pass
+
+        if cores > 1:
+            p = Pool(cores)
+            results = p.map(self._decode_chunk, replica_args)
+            for result in results:
+                for rep_id, i, j, res in result:
+                    self.replica[rep_id]['cmat'][:, i, j] = res
+        else:
+            pass
 
         # After processing, locate all frames at which a
         # transition occurred and store it into `self.frames`
@@ -350,6 +374,11 @@ class Network:
         self._clean_frames(min_lifetime=min_lifetime)
 
         return
+
+    def _decode_chunk(self, args):
+        for rep_id, i, j, obs in args:
+            yield (rep_id, i, j,
+                   decoder_cpp(obs, start_p, trans_p, emission_p))
 
     def _generate_SMILES(self, rep_id, tol=10):
         """Generates list of SMILES strings from trajectory.

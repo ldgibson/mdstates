@@ -359,7 +359,9 @@ class Network:
         if cores > 1:
             p = Pool(cores)
             results = p.map(self._decode_chunk, replica_args)
+            # print(len(results))
             for result in results:
+                # print(len(result))
                 for rep_id, i, j, res in result:
                     self.replica[rep_id]['cmat'][:, i, j] = res
         else:
@@ -376,9 +378,15 @@ class Network:
         return
 
     def _decode_chunk(self, args):
+        result = []
+        start_p = np.array([0.5, 0.5])
+        trans_p = np.array([[0.999, 0.001], [0.001, 0.999]])
+        emission_p = np.array([[0.6, 0.4], [0.4, 0.6]])
         for rep_id, i, j, obs in args:
-            yield (rep_id, i, j,
-                   decoder_cpp(obs, start_p, trans_p, emission_p))
+            result.append((rep_id, i, j,
+                           decoder_cpp(obs, start_p, trans_p,
+                                       emission_p)))
+        return result
 
     def _generate_SMILES(self, rep_id, tol=10):
         """Generates list of SMILES strings from trajectory.

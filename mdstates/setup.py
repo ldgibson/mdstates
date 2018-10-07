@@ -10,7 +10,7 @@ ext_modules = [Extension(
     )]
 
 setup(
-    name = 'hmm_cython',
-    cmdclass = {'build_ext': build_ext},
-    ext_modules = ext_modules,
+    name='hmm_cython',
+    cmdclass={'build_ext': build_ext},
+    ext_modules=ext_modules,
     )

@@ -662,7 +662,7 @@ class Network:
         except(Exception):
             raise Exception(atom2 + ' does not have a covalent' +
                             ' radius in database.')
-        bond_distance = (r1 + r2) / 1000 * frac
+        bond_distance = ((r1 + r2) / 1000) * frac
         return bond_distance
         # pair = []
         # pair.append(str(atom1) + '-' + str(atom2))

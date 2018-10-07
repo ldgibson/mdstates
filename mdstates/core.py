@@ -9,7 +9,7 @@ from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
 import pybel
 
-from .data import bonds, radii
+from .data import radii
 from .graphs import combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi_wrapper  # , viterbi
 from .hmm_cython import decoder_cpp
@@ -594,7 +594,7 @@ class Network:
     def _get_atoms(self):
         """Generates the list of atoms in the trajectory."""
 
-        table, bonds = self.replica[0]['traj'].top.to_dataframe()
+        table, _ = self.replica[0]['traj'].top.to_dataframe()
         self.atoms = table['element'].tolist()
         return
 
@@ -664,19 +664,6 @@ class Network:
                             ' radius in database.')
         bond_distance = ((r1 + r2) / 1000) * frac
         return bond_distance
-        # pair = []
-        # pair.append(str(atom1) + '-' + str(atom2))
-        # pair.append(str(atom2) + '-' + str(atom1))
-        # loc_bool = [x in bonds.index for x in pair]
-        # if any(loc_bool):
-            # idx = loc_bool.index(True)
-            # return float(bonds.loc[pair[idx], 'distance']) * 0.1 * frac
-        # else:
-            # raise LookupError(pair[0] + " was not found in cutoff " +
-                              # "database. Please manually add it to " +
-                              # "the cutoff dictionary using " +
-                              # "Network.set_cutoff() and then rerun " +
-                              # "Network.generate_contact_matrix().")
 
     def _find_transition_frames(self):
         """Finds transitions in the processed contact matrix.

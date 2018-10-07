@@ -9,9 +9,10 @@ from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
 import pybel
 
-from .data import bonds
+from .data import radii
 from .graphs import combine_graphs, prepare_graph
-from .hmm import generate_ignore_list, viterbi, viterbi_wrapper
+from .hmm import generate_ignore_list, viterbi_wrapper  # , viterbi
+from .hmm_cython import decoder_cpp
 from .molecules import contact_matrix_to_SMILES
 from .smiles import (remove_consecutive_repeats, save_unique_SMILES,
                      find_reaction)
@@ -262,7 +263,7 @@ class Network:
     def decode(self, n=10, states=[0, 1], start_p=[0.5, 0.5],
                trans_p=[[0.999, 0.001], [0.001, 0.999]],
                emission_p=[[0.60, 0.40], [0.40, 0.60]], min_lifetime=20,
-               cores=4):
+               cores=1):
         """Uses Viterbi algorithm to clean the signal for each bond.
 
         Prior to processing each individual index in the contact
@@ -322,9 +323,8 @@ class Network:
                         else:
                             if cores == 1:
                                 rep['cmat'][:, i, j] =\
-                                    viterbi(rep['cmat'][:, i, j],
-                                            states, start_p,
-                                            trans_p, emission_p)
+                                    decoder_cpp(rep['cmat'][:, i, j],
+                                                start_p, trans_p, emission_p)
                             else:
                                 run_indices.append([i, j,
                                                     rep['cmat'][:, i, j]])
@@ -594,7 +594,7 @@ class Network:
     def _get_atoms(self):
         """Generates the list of atoms in the trajectory."""
 
-        table, bonds = self.replica[0]['traj'].top.to_dataframe()
+        table, _ = self.replica[0]['traj'].top.to_dataframe()
         self.atoms = table['element'].tolist()
         return
 
@@ -652,19 +652,18 @@ class Network:
         LookupError
             If the atom pair is not present in the database.
         """
-        pair = []
-        pair.append(str(atom1) + '-' + str(atom2))
-        pair.append(str(atom2) + '-' + str(atom1))
-        loc_bool = [x in bonds.index for x in pair]
-        if any(loc_bool):
-            idx = loc_bool.index(True)
-            return float(bonds.loc[pair[idx], 'distance']) * 0.1 * frac
-        else:
-            raise LookupError(pair[0] + " was not found in cutoff " +
-                              "database. Please manually add it to " +
-                              "the cutoff dictionary using " +
-                              "Network.set_cutoff() and then rerun " +
-                              "Network.generate_contact_matrix().")
+        try:
+            r1 = radii.loc[atom1, 'single']
+        except(Exception):
+            raise Exception(atom1 + ' does not have a covalent' +
+                            ' radius in database.')
+        try:
+            r2 = radii.loc[atom2, 'single']
+        except(Exception):
+            raise Exception(atom2 + ' does not have a covalent' +
+                            ' radius in database.')
+        bond_distance = ((r1 + r2) / 1000) * frac
+        return bond_distance
 
     def _find_transition_frames(self):
         """Finds transitions in the processed contact matrix.

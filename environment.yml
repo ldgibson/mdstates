@@ -5,6 +5,7 @@ channels:
   - openbabel
 dependencies:
   - python>=3.6
+  - cython
   - networkx>=2.1
   - pandas
   - numpy

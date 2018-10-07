@@ -1,5 +1,7 @@
 import numpy as np
 
+from .hmm_cython import decoder_cpp
+
 __all__ = ['generate_ignore_list', 'viterbi', 'viterbi_wrapper']
 
 
@@ -119,7 +121,7 @@ def viterbi(obs, states, start_p, trans_p, emission_p):
 
 
 def viterbi_wrapper(inp_params):
-    states = np.array([0, 1])
+    # states = np.array([0, 1])
     start_p = np.array([0.5, 0.5])
     trans_p = np.array([[0.999, 0.001], [0.001, 0.999]])
     emission_p = np.array([[0.6, 0.4], [0.4, 0.6]])
@@ -128,7 +130,7 @@ def viterbi_wrapper(inp_params):
     j = inp_params[1]
     obs = inp_params[2]
 
-    return (i, j, viterbi(obs, states, start_p, trans_p, emission_p))
+    return (i, j, decoder_cpp(obs, start_p, trans_p, emission_p))
 
 
 def fast_viterbi(obs, states, start_p, trans_p, emission_p):

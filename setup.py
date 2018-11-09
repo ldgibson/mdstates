@@ -18,7 +18,9 @@ ext_modules = [Extension(
                name="mdstates.hmm_cython",
                sources=["mdstates/hmm_cython.pyx", "mdstates/hmm.cpp"],
                # include_dirs=["/Users/ldgibson/Development/mdstates/mdstates/.", np.get_include()],
-               extra_compile_args=["-std=c++11"],
+               extra_compile_args=["-std=c++11", "-fopenmp", "-O3"],
+               extra_link_args=["-fopenmp"],
+               include_dirs=[np.get_include()],
                language="c++",
                )]
 

@@ -65,37 +65,37 @@ def test_generate_contact_matrix():
     assert np.all([x == 0 or x == 1 for x in
                    np.nditer(net.replica[0]['cmat'])])
 
-    assert (net.replica[0]['cmat'][:, 0, 1] == 1).all() and\
-           (net.replica[0]['cmat'][:, 0, 2] == 1).all() and\
-           (net.replica[0]['cmat'][:, 0, 3] == 1).all()
+    assert (net.replica[0]['cmat'][0, 1, :] == 1).all() and\
+           (net.replica[0]['cmat'][0, 2, :] == 1).all() and\
+           (net.replica[0]['cmat'][0, 3, :] == 1).all()
 
     n_frames = net.replica[0]['traj'].n_frames
 
     assert net.replica[0]['cmat'].shape ==\
-        (n_frames, net.n_atoms, net.n_atoms)
+        (net.n_atoms, net.n_atoms, n_frames)
 
     net = Network()
     net.add_replica(traj_path, top_path)
     net.generate_contact_matrix(ignore='Cl')
 
-    assert (net.replica[0]['cmat'][:, [4, 5], :] == 0).all() and\
-           (net.replica[0]['cmat'][:, :, [4, 5]] == 0).all()
+    assert (net.replica[0]['cmat'][[4, 5], :, :] == 0).all() and\
+           (net.replica[0]['cmat'][:, [4, 5], :] == 0).all()
 
     net = Network()
     net.add_replica(traj_path, top_path)
     net.generate_contact_matrix(ignore=[4, 5])
 
-    assert (net.replica[0]['cmat'][:, [4, 5], :] == 0).all() and\
-           (net.replica[0]['cmat'][:, :, [4, 5]] == 0).all()
+    assert (net.replica[0]['cmat'][[4, 5], :, :] == 0).all() and\
+           (net.replica[0]['cmat'][:, [4, 5], :] == 0).all()
 
     net = Network()
     net.add_replica(traj_path, top_path)
     net.generate_contact_matrix(ignore=[4, 'H'])
 
-    assert (net.replica[0]['cmat'][:, 4, :] == 0).all() and\
-           (net.replica[0]['cmat'][:, :, 4] == 0).all() and\
-           (net.replica[0]['cmat'][:, [1, 2, 3], :] == 0).all() and\
-           (net.replica[0]['cmat'][:, :, [1, 2, 3]] == 0).all(),\
+    assert (net.replica[0]['cmat'][4, :, :] == 0).all() and\
+           (net.replica[0]['cmat'][:, 4, :] == 0).all() and\
+           (net.replica[0]['cmat'][[1, 2, 3], :, :] == 0).all() and\
+           (net.replica[0]['cmat'][:, [1, 2, 3], :] == 0).all(),\
         "Ignore feature is not working properly with lists."
     return
 
@@ -167,16 +167,16 @@ def test_decode():
     net.n_atoms = 3
     net.frames.append([])
 
-    net.replica[0]['cmat'] = np.zeros((200, 3, 3), dtype=int)
-    net.replica[0]['cmat'][:, 0, 1] = 1
+    net.replica[0]['cmat'] = np.zeros((3, 3, 200), dtype=np.int32)
+    net.replica[0]['cmat'][0, 1, :] = 1
     idx = np.arange(0, 200, 10)
-    net.replica[0]['cmat'][idx, 0, 2] = 1
+    net.replica[0]['cmat'][0, 2, idx] = 1
 
     net.decode()
 
-    assert np.all(net.replica[0]['cmat'][:, 0, 1] == 1)
-    assert np.all(net.replica[0]['cmat'][:, 1, 2] == 0)
-    assert np.all(net.replica[0]['cmat'][:, 0, 2] == 0)
+    assert np.all(net.replica[0]['cmat'][0, 1, :] == 1)
+    assert np.all(net.replica[0]['cmat'][1, 2, :] == 0)
+    assert np.all(net.replica[0]['cmat'][0, 2, :] == 0)
 
     return
 
@@ -218,10 +218,12 @@ def test_build_connections():
     net.atoms = ['H', 'H']
     net.n_atoms = 2
     net.set_cutoff(['H', 'H'], 1.2)
-    dist = np.array([[[0, 1.3], [0, 0]], [[0, 1.0], [0, 0]]])
+    dist = np.array([[1.3], [1.0]])
+    # dist = np.array([[[0, 1.3], [0, 0]], [[0, 1.0], [0, 0]]])
+    dist = net._reshape_to_square(dist)
     cmat = net._build_connections(dist)
-    assert cmat[0, 0, 1] == 0, "Nonbonded cutoff not working."
-    assert cmat[1, 0, 1] == 1, "Bonded cutoff not working."
+    assert cmat[0, 1, 0] == 0, "Nonbonded cutoff not working."
+    assert cmat[0, 1, 1] == 1, "Bonded cutoff not working."
     return
 
 
@@ -230,8 +232,11 @@ def test_reshape_to_square():
     net.n_atoms = 3
     linear = np.array([[1, 2, 3], [4, 5, 6]])
     square = net._reshape_to_square(linear)
-    true = np.array([[[0, 1, 2], [0, 0, 3], [0, 0, 0]],
-                     [[0, 4, 5], [0, 0, 6], [0, 0, 0]]])
+    true = np.array([[[0, 0], [1, 4], [2, 5]],
+                     [[0, 0], [0, 0], [3, 6]],
+                     [[0, 0], [0, 0], [0, 0]]])
+    # true = np.array([[[0, 1, 2], [0, 0, 3], [0, 0, 0]],
+                     # [[0, 4, 5], [0, 0, 6], [0, 0, 0]]])
     assert np.all(square == true), "Not reshaping correctly."
     return
 

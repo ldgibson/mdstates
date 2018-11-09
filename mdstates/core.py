@@ -11,7 +11,7 @@ import pybel
 
 from .data import radii
 from .graphs import combine_graphs, prepare_graph
-from .hmm import generate_ignore_list, viterbi_wrapper  # , viterbi
+from .hmm import generate_ignore_list, viterbi_wrapper, viterbi
 from .hmm_cython import decode_cpp, viterbi_cpp
 from .molecules import contact_matrix_to_SMILES
 from .smiles import (remove_consecutive_repeats, save_unique_SMILES,
@@ -319,7 +319,7 @@ class Network:
     def decode(self, n=10, states=[0, 1], start_p=[0.5, 0.5],
                trans_p=[[0.999, 0.001], [0.001, 0.999]],
                emission_p=[[0.60, 0.40], [0.40, 0.60]], min_lifetime=20,
-               cores=1):
+               cores=1, use_python=False):
         """Uses Viterbi algorithm to clean the signal for each bond.
 
         Prior to processing each individual index in the contact
@@ -379,45 +379,25 @@ class Network:
                         elif [i, j] in ignore_list[1]:
                             rep['cmat'][i, j, :] = 1
                         else:
-                            # rep['cmat'][:, i, j] =\
-                                # decoder_cpp(rep['cmat'][:, i, j],
-                                            # start_p, trans_p, emission_p)
-                            run_indices_i.append(i)
-                            run_indices_j.append(j)
+                            if use_python:
+                                rep['cmat'][:, i, j] =\
+                                    viterbi(rep['cmat'][:, i, j], states,
+                                            start_p, trans_p, emission_p)
+                            else:
+                                run_indices_i.append(i)
+                                run_indices_j.append(j)
 
-                if run_indices_i and run_indices_j:
-                    rep['cmat'][run_indices_i, run_indices_j, :] = \
-                        decode_cpp(rep['cmat'][run_indices_i, run_indices_j, :],
-                                   start_p, trans_p, emission_p, cores)
+                if not use_python:
+                    # Check if there is anything to decode.
+                    if run_indices_i and run_indices_j:
+                        rep['cmat'][run_indices_i, run_indices_j, :] = \
+                            decode_cpp(rep['cmat'][run_indices_i, run_indices_j, :],
+                                       start_p, trans_p, emission_p, cores)
+                    else:
+                        pass
                 else:
                     pass
                 rep['processed'] = True
-                # if cores > 1:
-                    # q = Queue()
-                    # p = Pool(cores)
-                    # results = p.map(viterbi_wrapper, run_indices)
-                    # p.close()
-                    # p.join()
-                    # for i, j, result in results:
-                        # rep['cmat'][:, i, j] = result
-                # else:
-                    # pass
-
-                # Mark that this replica's contact matrix
-                # has been processed.
-
-        # if cores > 1:
-            # q = Queue()
-            # processes = []
-            # for i in range(len(self.replica)):
-                # p = Process(target=self._clean_all_traj, args=(i, n, start_p,
-                                                               # trans_p,
-                                                               # emission_p))
-                # processes.append(p)
-                # p.start()
-                # self.replica[i]['processed'] = True
-            # for proc in processes:
-                # proc.join()
 
         # After processing, locate all frames at which a
         # transition occurred and store it into `self.frames`

@@ -3,7 +3,7 @@ from itertools import combinations
 from os.path import abspath, dirname, join
 
 import mdtraj as md
-from multiprocessing import Pool
+from multiprocessing import Array, Manager, Process, Pool, Queue
 import networkx as nx
 from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
@@ -12,7 +12,7 @@ import pybel
 from .data import radii
 from .graphs import combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi_wrapper  # , viterbi
-from .hmm_cython import decoder_cpp
+from .hmm_cython import decode_cpp, viterbi_cpp
 from .molecules import contact_matrix_to_SMILES
 from .smiles import (remove_consecutive_repeats, save_unique_SMILES,
                      find_reaction)
@@ -87,20 +87,49 @@ class Network:
                 assert rep['path'] != abspath(trajectory),\
                     "A trajectory from that location is already loaded."
 
-        self.replica.append({'traj': None, 'cmat': None, 'path': None,
-                             'processed': False, 'network': None,
-                             'smiles': None})
+        if isinstance(trajectory, list):
+            for _ in range(len(trajectory)):
+                self.replica.append({'traj': None, 'cmat': None, 'path': None,
+                                     'processed': False, 'network': None,
+                                     'smiles': None})
+        else:
+            self.replica.append({'traj': None, 'cmat': None, 'path': None,
+                                 'processed': False, 'network': None,
+                                 'smiles': None})
         if topology:
             pass
         else:
             topology = self._traj_to_topology(abspath(trajectory), 'xyz')
 
-        self.replica[-1]['traj'] = md.load(trajectory, top=topology,
-                                           **kwargs)
-        self.replica[-1]['path'] = abspath(trajectory)
+        if isinstance(trajectory, list):
+            processes = []
+            manager = Manager()
+            rep_dict = []
 
-        # Add a sub-list for frames.
-        self.frames.append([])
+            for i, traj in enumerate(trajectory):
+                rep_dict.append(manager.dict(self.replica[i]))
+                p = Process(target=self._add_replica_traj, args=(rep_dict[i], traj, topology))
+                processes.append(p)
+                p.start()
+                self.replica[i]['path'] = abspath(traj)
+                # Add a sub-list for frames.
+                self.frames.append([])
+                # self.replica[-1]['traj'] = md.load(traj, top=topology,
+                                                   # **kwargs)
+            for i, proc in enumerate(processes):
+                proc.join()
+                self.replica[i]['traj'] = rep_dict[i]['traj']
+
+            # for i, rep in enumerate(self.replica):
+                # print(rep)
+                # assert rep['traj'], "Rep {} not loaded".format(i)
+
+        else:
+            self.replica[-1]['traj'] = md.load(trajectory, top=topology,
+                                               **kwargs)
+            self.replica[-1]['path'] = abspath(trajectory)
+            # Add a sub-list for frames.
+            self.frames.append([])
 
         # Set the topology.
         if self.topology is None:
@@ -120,6 +149,10 @@ class Network:
         else:
             pass
 
+        return
+
+    def _add_replica_traj(self, rep, traj, top, **kwargs):
+        rep['traj'] = md.load(traj, top=top, **kwargs)
         return
 
     def remove_replica(self, rep_id):
@@ -145,7 +178,8 @@ class Network:
         del self.replica[rep_id]
         return
 
-    def generate_contact_matrix(self, cutoff_frac=1.3, ignore=None):
+    def generate_contact_matrix(self, cutoff_frac=1.4, ignore=None,
+                                parallel=False):
         """
         Converts each trajectory frame to a contact matrix.
 
@@ -217,19 +251,41 @@ class Network:
         else:
             pass
 
-        for i, rep in enumerate(self.replica):
-            if rep['cmat'] is None:
-                distances = self._compute_distances(i)
-                distances = self._reshape_to_square(distances)
-                rep['cmat'] = self._build_connections(distances)
+        if parallel:
+            processes = []
+            manager = Manager()
+            rep_dict = []
+            for i, rep in enumerate(self.replica):
+                rep_dict.append(manager.dict(rep))
+                p = Process(target=self._build_single_cmat, args=(i, rep_dict[i]))
+                processes.append(p)
+                p.start()
+
+            for i, proc in enumerate(processes):
+                proc.join()
+                self.replica[i]['cmat'] = rep_dict[i]['cmat']
                 if ignore:
-                    rep['cmat'][:, ignore_list, :] = 0
-                    rep['cmat'][:, :, ignore_list] = 0
+                    self.replica[i]['cmat'][ignore_list, :, :] = 0
+                    self.replica[i]['cmat'][:, ignore_list, :] = 0
+        else:
+            for i, rep in enumerate(self.replica):
+                if rep['cmat'] is None:
+                    distances = self._compute_distances(i)
+                    distances = self._reshape_to_square(distances)
+                    rep['cmat'] = self._build_connections(distances)
+                    if ignore:
+                        rep['cmat'][ignore_list, :, :] = 0
+                        rep['cmat'][:, ignore_list, :] = 0
+                    else:
+                        pass
                 else:
                     pass
-            else:
-                pass
+        return
 
+    def _build_single_cmat(self, rep_id, rep):
+        distances = self._compute_distances(rep_id)
+        distances = self._reshape_to_square(distances)
+        rep['cmat'] = self._build_connections(distances)
         return
 
     def set_cutoff(self, atoms, cutoff):
@@ -311,35 +367,57 @@ class Network:
             if rep['processed']:
                 pass
             else:
-                run_indices = []
+                run_indices_i = []
+                run_indices_j = []
                 ignore_list = generate_ignore_list(rep['cmat'], n)
 
+                # if cores == 1:
                 for i in range(self.n_atoms - 1):
                     for j in range(i + 1, self.n_atoms):
                         if [i, j] in ignore_list[0]:
-                            rep['cmat'][:, i, j] = 0
+                            rep['cmat'][i, j, :] = 0
                         elif [i, j] in ignore_list[1]:
-                            rep['cmat'][:, i, j] = 1
+                            rep['cmat'][i, j, :] = 1
                         else:
-                            if cores == 1:
-                                rep['cmat'][:, i, j] =\
-                                    decoder_cpp(rep['cmat'][:, i, j],
-                                                start_p, trans_p, emission_p)
-                            else:
-                                run_indices.append([i, j,
-                                                    rep['cmat'][:, i, j]])
+                            # rep['cmat'][:, i, j] =\
+                                # decoder_cpp(rep['cmat'][:, i, j],
+                                            # start_p, trans_p, emission_p)
+                            run_indices_i.append(i)
+                            run_indices_j.append(j)
 
-                if cores > 1:
-                    p = Pool(cores)
-                    results = p.map(viterbi_wrapper, run_indices)
-                    for i, j, result in results:
-                        rep['cmat'][:, i, j] = result
+                if run_indices_i and run_indices_j:
+                    rep['cmat'][run_indices_i, run_indices_j, :] = \
+                        decode_cpp(rep['cmat'][run_indices_i, run_indices_j, :],
+                                   start_p, trans_p, emission_p, cores)
                 else:
                     pass
+                rep['processed'] = True
+                # if cores > 1:
+                    # q = Queue()
+                    # p = Pool(cores)
+                    # results = p.map(viterbi_wrapper, run_indices)
+                    # p.close()
+                    # p.join()
+                    # for i, j, result in results:
+                        # rep['cmat'][:, i, j] = result
+                # else:
+                    # pass
 
                 # Mark that this replica's contact matrix
                 # has been processed.
-                rep['processed'] = True
+
+        # if cores > 1:
+            # q = Queue()
+            # processes = []
+            # for i in range(len(self.replica)):
+                # p = Process(target=self._clean_all_traj, args=(i, n, start_p,
+                                                               # trans_p,
+                                                               # emission_p))
+                # processes.append(p)
+                # p.start()
+                # self.replica[i]['processed'] = True
+            # for proc in processes:
+                # proc.join()
 
         # After processing, locate all frames at which a
         # transition occurred and store it into `self.frames`
@@ -374,8 +452,8 @@ class Network:
 
         # if not frames:
         if frames.size == 0:
-            num_frames = len(cmat)
-            last_smiles = contact_matrix_to_SMILES(cmat[-1, :, :], self.atoms)
+            num_frames = cmat.shape[2]
+            last_smiles = contact_matrix_to_SMILES(cmat[:, :, -1], self.atoms)
             if last_smiles == self._first_smiles:
                 return [(self._first_smiles, 0)]
             else:
@@ -386,17 +464,17 @@ class Network:
 
         smiles = []
 
-        for f in range(len(cmat)):
-            # if np.isclose(frames - f, 10, atol=tol).any():
-            if ((f - frames < tol) & (f - frames >= 0)).any():
-                smi = contact_matrix_to_SMILES(cmat[f, :, :], self.atoms)
+        for f in range(cmat.shape[2]):
+            if np.isclose(frames - f, 0, atol=tol).any():
+            # if ((f - frames < tol) & (f - frames >= 0)).any():
+                smi = contact_matrix_to_SMILES(cmat[:, :, f], self.atoms)
                 frame = find_nearest(f, frames)
                 smiles.append((smi, frame))
             else:
                 pass
 
-        last_smiles = contact_matrix_to_SMILES(cmat[-1, :, :], self.atoms)
-        smiles.append((last_smiles, len(cmat) - 1))
+        last_smiles = contact_matrix_to_SMILES(cmat[:, :, -1], self.atoms)
+        smiles.append((last_smiles, cmat.shape[2] - 1))
 
         reduced_smiles = remove_consecutive_repeats(smiles)
 
@@ -544,21 +622,21 @@ class Network:
         >>> foo = np.array([[1, 2, 3],
         ...                 [4, 5, 6]])
         >>> bar = self._reshape_to_square(foo)
-        >>> bar[0, :, :]  # first frame
+        >>> bar[:, :, 0]  # first frame
         array([[0, 1, 2],
                [0, 0, 3],
                [0, 0, 0]])
-        >>> bar[1, :, :]  # second frame
+        >>> bar[:, :, 0]  # second frame
         array([[0, 4, 5],
                [0, 0, 6],
                [0, 0, 0]])
         """
         frames = linear_matrix.shape[0]
-        square_matrix = np.zeros((frames, self.n_atoms, self.n_atoms))
+        square_matrix = np.zeros((self.n_atoms, self.n_atoms, frames))
         upper_tri_id = np.triu_indices(self.n_atoms, 1)
 
         for f in range(frames):
-            square_matrix[f, upper_tri_id[0], upper_tri_id[1]] =\
+            square_matrix[upper_tri_id[0], upper_tri_id[1], f] =\
                 linear_matrix[f, :]
 
         return square_matrix
@@ -578,16 +656,16 @@ class Network:
         cmat : numpy.ndarray
             Contact matrix at all frames
         """
-        frames = distances.shape[0]
+        frames = distances.shape[2]
 
-        cmat = np.zeros((frames, self.n_atoms, self.n_atoms), dtype=int)
+        cmat = np.zeros((self.n_atoms, self.n_atoms, frames), dtype=np.int32)
 
         for i in range(self.n_atoms - 1):
             for j in range(i + 1, self.n_atoms):
                 atom1 = self.atoms[i]
                 atom2 = self.atoms[j]
-                cmat[:, i, j] =\
-                    np.where(distances[:, i, j] <
+                cmat[i, j, :] =\
+                    np.where(distances[i, j, :] <
                              self._cutoff[frozenset([atom1, atom2])], 1, 0)
         return cmat
 
@@ -632,7 +710,7 @@ class Network:
                         self._bond_distance(atom1, atom2, frac=cutoff_frac)
         return
 
-    def _bond_distance(self, atom1, atom2, frac=1.3):
+    def _bond_distance(self, atom1, atom2, frac=1.4):
         """
         Queries a database to fetch a bond distance between two atoms.
 
@@ -692,9 +770,8 @@ class Network:
             "Number of sets of frames does not equal number of replicas."
 
         for rep_id, rep in enumerate(self.replica):
-            trans_frames = np.where(np.diff(rep['cmat'],
-                                    axis=0).reshape((-1, self.n_atoms ** 2))
-                                    .any(axis=1))[0]
+            trans_frames = np.where(np.diff(rep['cmat'])
+                           .reshape((self.n_atoms ** 2, -1)))[1]
             self.frames[rep_id] = list(trans_frames)
         return
 
@@ -854,7 +931,7 @@ class Network:
                                          self._pairs, periodic=self.pbc)
         distances = self._reshape_to_square(distances)
         cmat = self._build_connections(distances)
-        self._first_smiles = contact_matrix_to_SMILES(cmat[0, ...],
+        self._first_smiles = contact_matrix_to_SMILES(cmat[..., 0],
                                                       self.atoms)
         return
 

@@ -11,8 +11,8 @@ import pybel
 
 from .data import radii
 from .graphs import combine_graphs, prepare_graph
-from .hmm import generate_ignore_list, viterbi_wrapper, viterbi
-from .hmm_cython import decode_cpp, viterbi_cpp
+from .hmm import generate_ignore_list, viterbi
+from .hmm_cython import decode_cpp   # , viterbi_cpp
 from .molecules import contact_matrix_to_SMILES
 from .smiles import (remove_consecutive_repeats, save_unique_SMILES,
                      find_reaction)
@@ -370,6 +370,7 @@ class Network:
                 run_indices_i = []
                 run_indices_j = []
                 ignore_list = generate_ignore_list(rep['cmat'], n)
+                print(ignore_list)
 
                 # if cores == 1:
                 for i in range(self.n_atoms - 1):
@@ -380,8 +381,8 @@ class Network:
                             rep['cmat'][i, j, :] = 1
                         else:
                             if use_python:
-                                rep['cmat'][:, i, j] =\
-                                    viterbi(rep['cmat'][:, i, j], states,
+                                rep['cmat'][i, j, :] =\
+                                    viterbi(rep['cmat'][i, j, :], states,
                                             start_p, trans_p, emission_p)
                             else:
                                 run_indices_i.append(i)

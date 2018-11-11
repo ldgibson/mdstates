@@ -1,8 +1,6 @@
 import numpy as np
 
-from .hmm_cython import decoder_cpp
-
-__all__ = ['generate_ignore_list', 'viterbi', 'viterbi_wrapper']
+__all__ = ['generate_ignore_list', 'viterbi']
 
 
 def generate_ignore_list(cmat, n):
@@ -32,7 +30,7 @@ def generate_ignore_list(cmat, n):
     for i in range(n_atoms - 1):
         for j in range(i + 1, n_atoms):
             # Find all unique values and their respective counts
-            values, counts = np.unique(cmat[:, i, j], return_counts=True)
+            values, counts = np.unique(cmat[i, j, :], return_counts=True)
             unique = dict(zip(values, counts))
 
             # If 0 or 1 never appear, place that index on
@@ -118,19 +116,6 @@ def viterbi(obs, states, start_p, trans_p, emission_p):
         previous = V[t + 1][previous]["prev"]
 
     return optimal_path
-
-
-def viterbi_wrapper(inp_params):
-    # states = np.array([0, 1])
-    start_p = np.array([0.5, 0.5])
-    trans_p = np.array([[0.999, 0.001], [0.001, 0.999]])
-    emission_p = np.array([[0.6, 0.4], [0.4, 0.6]])
-
-    i = inp_params[0]
-    j = inp_params[1]
-    obs = inp_params[2]
-
-    return (i, j, decoder_cpp(obs, start_p, trans_p, emission_p))
 
 
 def fast_viterbi(obs, states, start_p, trans_p, emission_p):

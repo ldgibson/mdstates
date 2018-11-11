@@ -172,6 +172,24 @@ def test_decode():
     idx = np.arange(0, 200, 10)
     net.replica[0]['cmat'][0, 2, idx] = 1
 
+    net.decode(use_python=True)
+
+    assert np.all(net.replica[0]['cmat'][0, 1, :] == 1)
+    assert np.all(net.replica[0]['cmat'][1, 2, :] == 0)
+    assert np.all(net.replica[0]['cmat'][0, 2, :] == 0)
+
+    # Now redo the tests without the Python Viterbi version
+    net = Network()
+    net.replica.append({'traj': None, 'cmat': None, 'path': None,
+                        'processed': False, 'network': None})
+    net.n_atoms = 3
+    net.frames.append([])
+
+    net.replica[0]['cmat'] = np.zeros((3, 3, 200), dtype=np.int32)
+    net.replica[0]['cmat'][0, 1, :] = 1
+    idx = np.arange(0, 200, 10)
+    net.replica[0]['cmat'][0, 2, idx] = 1
+
     net.decode()
 
     assert np.all(net.replica[0]['cmat'][0, 1, :] == 1)
@@ -235,8 +253,6 @@ def test_reshape_to_square():
     true = np.array([[[0, 0], [1, 4], [2, 5]],
                      [[0, 0], [0, 0], [3, 6]],
                      [[0, 0], [0, 0], [0, 0]]])
-    # true = np.array([[[0, 1, 2], [0, 0, 3], [0, 0, 0]],
-                     # [[0, 4, 5], [0, 0, 6], [0, 0, 0]]])
     assert np.all(square == true), "Not reshaping correctly."
     return
 

@@ -6,7 +6,6 @@ from Cython.Build import cythonize
 import numpy as np
 
 PACKAGES = find_packages()
-# os.environ["CC"] = "gcc-8"
 
 # Get version and release info, which is all stored in shablona/version.py
 ver_file = os.path.join('mdstates', 'version.py')
@@ -16,10 +15,15 @@ with open(ver_file) as f:
 
 ext_modules = [Extension(
                name="mdstates.hmm_cython",
-               sources=["mdstates/hmm_cython.pyx", "mdstates/hmm.cpp"],
-               # include_dirs=["/Users/ldgibson/Development/mdstates/mdstates/.", np.get_include()],
-               extra_compile_args=["-std=c++11", "-fopenmp", "-O3"],
-               extra_link_args=["-fopenmp"],
+               sources=["mdstates/hmm_cython.pyx",
+                        # "mdstates/hmm.cpp",
+                        "mdstates/hmm_serial.cpp",
+                        ],
+               extra_compile_args=["-std=c++11",
+                                   # "-fopenmp",
+                                   "-O3",
+                                   ],
+               # extra_link_args=["-fopenmp"],
                include_dirs=[np.get_include()],
                language="c++",
                )]

@@ -1,0 +1,8 @@
+replica0
+CCl.[F-],1
+CF.[Cl-],100
+CCl.[F-],200
+replica1
+CCl.[F-],1
+CF.[Cl-],300
+CCl.[F-],500

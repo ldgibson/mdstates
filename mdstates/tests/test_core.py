@@ -318,3 +318,29 @@ def test_compile_networks():
 def test_build_all_networks():
     pass
     return
+
+def test_save():
+    net = Network()
+    net.add_replica(traj_path, top_path)
+    net.generate_contact_matrix()
+    net.decode()
+    net.save('test')
+    if os.path.exists('test.txt'):
+        os.remove('test.txt')
+    else:
+        raise AssertionError('Checkpont file not saved.')
+    return
+
+def test_load():
+    net = Network()
+    test_file = os.path.join(currentdir, 'test_cases', 'test_load.txt')
+    net.load(test_file)
+
+    assert len(net.replica) == 2
+    assert net.replica[0]['smiles'] = [('CCl.[F-]', 1),
+                                       ('CF.[Cl-]', 100),
+                                       ('CCl.[F-]', 200)]
+    assert net.replica[1]['smiles'] = [('CCl.[F-]', 1),
+                                       ('CF.[Cl-]', 300),
+                                       ('CCl.[F-]', 500)]
+    return

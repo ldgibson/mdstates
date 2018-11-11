@@ -949,3 +949,28 @@ class Network:
         topology_path = join(parent_dir, top_name)
         mol.write('pdb', topology_path, overwrite=True)
         return topology_path
+
+    def save(self, name):
+        """Saves the current state of the reaction network as a txt.
+
+        This saves the SMILES list and frames that each SMILES state
+        is associated with in a text file.
+
+        Parameters
+        ----------
+        name : str
+            Name of the checkpoint file.
+        """
+
+        return
+
+    def load(self, name):
+        """Loads the network from a checkpoint file.
+
+        Parameters
+        ----------
+        name : str
+            Path to the checkpoint file.
+        """
+
+        return

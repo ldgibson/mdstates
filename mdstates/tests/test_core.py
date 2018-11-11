@@ -177,7 +177,7 @@ def test_decode():
     assert np.all(net.replica[0]['cmat'][0, 1, :] == 1)
     assert np.all(net.replica[0]['cmat'][1, 2, :] == 0)
     assert np.all(net.replica[0]['cmat'][0, 2, :] == 0)
-    
+
     # Now redo the tests without the Python Viterbi version
     net = Network()
     net.replica.append({'traj': None, 'cmat': None, 'path': None,
@@ -253,8 +253,6 @@ def test_reshape_to_square():
     true = np.array([[[0, 0], [1, 4], [2, 5]],
                      [[0, 0], [0, 0], [3, 6]],
                      [[0, 0], [0, 0], [0, 0]]])
-    # true = np.array([[[0, 1, 2], [0, 0, 3], [0, 0, 0]],
-                     # [[0, 4, 5], [0, 0, 6], [0, 0, 0]]])
     assert np.all(square == true), "Not reshaping correctly."
     return
 

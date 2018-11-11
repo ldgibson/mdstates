@@ -3,7 +3,7 @@ from itertools import combinations
 from os.path import abspath, dirname, join
 
 import mdtraj as md
-from multiprocessing import Array, Manager, Process, Pool, Queue
+from multiprocessing import Manager, Process
 import networkx as nx
 from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
@@ -108,21 +108,17 @@ class Network:
 
             for i, traj in enumerate(trajectory):
                 rep_dict.append(manager.dict(self.replica[i]))
-                p = Process(target=self._add_replica_traj, args=(rep_dict[i], traj, topology))
+                p = Process(target=self._add_replica_traj,
+                            args=(rep_dict[i], traj, topology))
                 processes.append(p)
                 p.start()
                 self.replica[i]['path'] = abspath(traj)
                 # Add a sub-list for frames.
                 self.frames.append([])
-                # self.replica[-1]['traj'] = md.load(traj, top=topology,
-                                                   # **kwargs)
+
             for i, proc in enumerate(processes):
                 proc.join()
                 self.replica[i]['traj'] = rep_dict[i]['traj']
-
-            # for i, rep in enumerate(self.replica):
-                # print(rep)
-                # assert rep['traj'], "Rep {} not loaded".format(i)
 
         else:
             self.replica[-1]['traj'] = md.load(trajectory, top=topology,
@@ -257,7 +253,8 @@ class Network:
             rep_dict = []
             for i, rep in enumerate(self.replica):
                 rep_dict.append(manager.dict(rep))
-                p = Process(target=self._build_single_cmat, args=(i, rep_dict[i]))
+                p = Process(target=self._build_single_cmat,
+                            args=(i, rep_dict[i]))
                 processes.append(p)
                 p.start()
 
@@ -392,7 +389,8 @@ class Network:
                     # Check if there is anything to decode.
                     if run_indices_i and run_indices_j:
                         rep['cmat'][run_indices_i, run_indices_j, :] = \
-                            decode_cpp(rep['cmat'][run_indices_i, run_indices_j, :],
+                            decode_cpp(rep['cmat'][run_indices_i,
+                                                   run_indices_j, :],
                                        start_p, trans_p, emission_p, cores)
                     else:
                         pass
@@ -447,7 +445,6 @@ class Network:
 
         for f in range(cmat.shape[2]):
             if np.isclose(frames - f, 0, atol=tol).any():
-            # if ((f - frames < tol) & (f - frames >= 0)).any():
                 smi = contact_matrix_to_SMILES(cmat[:, :, f], self.atoms)
                 frame = find_nearest(f, frames)
                 smiles.append((smi, frame))
@@ -752,7 +749,7 @@ class Network:
 
         for rep_id, rep in enumerate(self.replica):
             trans_frames = np.where(np.diff(rep['cmat'])
-                           .reshape((self.n_atoms ** 2, -1)))[1]
+                                    .reshape((self.n_atoms ** 2, -1)))[1]
             self.frames[rep_id] = list(trans_frames)
         return
 

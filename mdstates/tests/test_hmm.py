@@ -70,7 +70,8 @@ def test_fast_viterbi():
 
 
 def test_viterbi_cpp():
-    obs = np.concatenate([np.zeros(100, dtype=np.int32), np.ones(50, dtype=np.int32)])
+    obs = np.concatenate([np.zeros(100, dtype=np.int32),
+                          np.ones(50, dtype=np.int32)])
     obs[[75, 80, 83]] = 1
     obs[[128, 141]] = 0
 

@@ -1,5 +1,6 @@
 from numbers import Number
 from itertools import combinations
+import re
 from os.path import abspath, dirname, join
 
 import mdtraj as md
@@ -939,7 +940,11 @@ class Network:
         name : str
             Name of the checkpoint file.
         """
-
+        with open(name + '.txt', 'w') as f:
+            for i, rep in enumerate(self.replica):
+                f.write('replica{}\n'.format(i))
+                for smi, frame in rep['smiles']:
+                    f.write("{},{}\n".format(smi, frame))
         return
 
     def load(self, name):
@@ -950,5 +955,19 @@ class Network:
         name : str
             Path to the checkpoint file.
         """
-
+        with open(name, 'r') as f:
+            for line in f.readlines():
+                if line.startswith('replica'):
+                    rep_id = int(re.search('(?<=replica)\d*', line).group(0))
+                    self.replica.append({'traj': None, 'cmat': None, 'path': None,
+                                         'processed': False, 'network': None,
+                                         'smiles': None})
+                else:
+                    data = line.strip('\n').split(',')
+                    data[1] = int(data[1])
+                    if self.replica[rep_id]['smiles']:
+                        pass
+                    else:
+                        self.replica[rep_id]['smiles'] = []
+                    self.replica[rep_id]['smiles'].append((data[0], data[1]))
         return

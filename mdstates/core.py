@@ -489,7 +489,7 @@ class Network:
 
         self._build_all_networks(**kwargs_to_pass)
 
-        print("Saving SMILES images to: {}".format(abspath(SMILES_loc)))
+        # print("Saving SMILES images to: {}".format(abspath(SMILES_loc)))
         compiled = self._compile_networks(exclude=exclude)
         self.network = compiled
         # calculate_all_jp(compiled, len(self.replica) - len(exclude))
@@ -941,6 +941,7 @@ class Network:
             Name of the checkpoint file.
         """
         with open(name + '.txt', 'w') as f:
+            f.write('{}\n'.format(self._first_smiles))
             for i, rep in enumerate(self.replica):
                 f.write('replica{}\n'.format(i))
                 for smi, frame in rep['smiles']:
@@ -955,13 +956,15 @@ class Network:
         name : str
             Path to the checkpoint file.
         """
+        num_reps = 0
         with open(name, 'r') as f:
+            self._first_smiles = f.readline().strip('\n')
             for line in f.readlines():
                 if line.startswith('replica'):
                     rep_id = int(re.search('(?<=replica)\d*', line).group(0))
-                    self.replica.append({'traj': None, 'cmat': None, 'path': None,
-                                         'processed': False, 'network': None,
-                                         'smiles': None})
+                    self.replica.append({'traj': None, 'cmat': None,
+                                         'path': None, 'processed': False,
+                                         'network': None, 'smiles': None})
                 else:
                     data = line.strip('\n').split(',')
                     data[1] = int(data[1])
@@ -970,4 +973,18 @@ class Network:
                     else:
                         self.replica[rep_id]['smiles'] = []
                     self.replica[rep_id]['smiles'].append((data[0], data[1]))
+                
+        return
+
+    def build_from_load(self, filename='overall.png', exclude=[],
+                        SMILES_loc='SMILESimages', use_LR=False,
+                        use_graphviz=False, **kwargs):
+        compiled = self._compile_networks(exclude=exclude)
+        self.network = compiled
+        final = prepare_graph(compiled, root_node=self._first_smiles, **kwargs)
+        print("Saving network to: {}".format(abspath(filename)))
+        if use_graphviz:
+            self._draw_network_with_graphviz(final, filename=filename)
+        else:
+            self._draw_network(final, filename=filename, use_LR=use_LR)
         return

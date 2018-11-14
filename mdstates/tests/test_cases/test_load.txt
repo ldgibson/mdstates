@@ -1,3 +1,4 @@
+CCl.[F-]
 replica0
 CCl.[F-],1
 CF.[Cl-],100

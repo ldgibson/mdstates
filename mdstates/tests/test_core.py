@@ -7,6 +7,7 @@ import numpy as np
 import networkx as nx
 
 from ..core import Network
+from ..graphs import prepare_graph
 
 currentdir = os.path.dirname(__file__)
 testdir = os.path.join(currentdir, 'test_cases')
@@ -351,7 +352,6 @@ def test_save():
 def test_load():
     net = Network()
     test_file = os.path.join(currentdir, 'test_cases', 'test_load.txt')
-    print(test_file)
     net.load(test_file)
 
     assert len(net.replica) == 2
@@ -361,4 +361,10 @@ def test_load():
     assert net.replica[1]['smiles'] == [('CCl.[F-]', 1),
                                         ('CF.[Cl-]', 300),
                                         ('CCl.[F-]', 500)]
+    for rep in net.replica:
+        rep['network'] = net._build_network(rep['smiles'])
+
+    compiled = net._compile_networks()
+    net.network = compiled
+    final = prepare_graph(net.network, root_node=net._first_smiles)
     return

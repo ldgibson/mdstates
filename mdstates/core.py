@@ -940,6 +940,12 @@ class Network:
         name : str
             Name of the checkpoint file.
         """
+        for i, rep in enumerate(self.replica):
+            if rep['smiles']:
+                pass
+            else:
+                rep['smiles'] = self._generate_SMILES(i, tol=10)
+
         with open(name + '.txt', 'w') as f:
             f.write('{}\n'.format(self._first_smiles))
             for i, rep in enumerate(self.replica):

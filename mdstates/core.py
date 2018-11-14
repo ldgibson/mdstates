@@ -368,7 +368,6 @@ class Network:
                 run_indices_i = []
                 run_indices_j = []
                 ignore_list = generate_ignore_list(rep['cmat'], n)
-                print(ignore_list)
 
                 # if cores == 1:
                 for i in range(self.n_atoms - 1):

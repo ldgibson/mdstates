@@ -364,7 +364,7 @@ def test_load():
     for rep in net.replica:
         rep['network'] = net._build_network(rep['smiles'])
 
-    compiled = net._compile_networks()
-    net.network = compiled
-    final = prepare_graph(net.network, root_node=net._first_smiles)
+    # compiled = net._compile_networks()
+    # net.network = compiled
+    # final = prepare_graph(net.network, root_node=net._first_smiles)
     return

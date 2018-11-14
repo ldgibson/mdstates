@@ -971,7 +971,6 @@ class Network:
         name : str
             Path to the checkpoint file.
         """
-        num_reps = 0
         with open(name, 'r') as f:
             self._first_smiles = f.readline().strip('\n')
             for line in f.readlines():
@@ -988,7 +987,6 @@ class Network:
                     else:
                         self.replica[rep_id]['smiles'] = []
                     self.replica[rep_id]['smiles'].append((data[0], data[1]))
-                
         return
 
     def build_from_load(self, filename='overall.png', exclude=[],

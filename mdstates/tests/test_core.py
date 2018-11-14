@@ -7,7 +7,7 @@ import numpy as np
 import networkx as nx
 
 from ..core import Network
-from ..graphs import prepare_graph
+# from ..graphs import prepare_graph
 
 currentdir = os.path.dirname(__file__)
 testdir = os.path.join(currentdir, 'test_cases')
@@ -336,6 +336,7 @@ def test_build_all_networks():
     pass
     return
 
+
 def test_save():
     net = Network()
     net.add_replica(traj_path, top_path)
@@ -348,6 +349,7 @@ def test_save():
     else:
         raise AssertionError('Checkpont file not saved.')
     return
+
 
 def test_load():
     net = Network()

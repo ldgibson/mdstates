@@ -466,7 +466,7 @@ class Network:
 
     def draw_overall_network(self, filename='overall.png', exclude=[],
                              SMILES_loc='SMILESimages', use_LR=False,
-                             use_graphviz=False, **kwargs):
+                             use_graphviz=False, tree_depth=None, **kwargs):
         """Builds networks for all replicas and combines them.
 
         Parameters
@@ -491,8 +491,18 @@ class Network:
         # print("Saving SMILES images to: {}".format(abspath(SMILES_loc)))
         compiled = self._compile_networks(exclude=exclude)
         self.network = compiled
-        # calculate_all_jp(compiled, len(self.replica) - len(exclude))
         final = prepare_graph(compiled, root_node=self._first_smiles, **kwargs)
+
+        # Remove all nodes that are beyond a threshold tree depth.
+        if tree_depth:
+            lengths = nx.shortest_path_length(final, source=self._first_smiles)
+            for node in lengths:
+                if lengths[node] > tree_depth:
+                    final.remove_node(node)
+                else:
+                    pass
+        else:
+            pass
 
         print("Saving network to: {}".format(abspath(filename)))
         if use_graphviz:
@@ -983,10 +993,25 @@ class Network:
 
     def build_from_load(self, filename='overall.png', exclude=[],
                         SMILES_loc='SMILESimages', use_LR=False,
-                        use_graphviz=False, **kwargs):
+                        use_graphviz=False, tree_depth=None, **kwargs):
+        for rep in self.replica:
+            rep['network'] = self._build_network(rep['smiles'])
+
         compiled = self._compile_networks(exclude=exclude)
         self.network = compiled
         final = prepare_graph(compiled, root_node=self._first_smiles, **kwargs)
+
+        # Remove all nodes that are beyond a threshold tree depth.
+        if tree_depth:
+            lengths = nx.shortest_path_length(final, source=self._first_smiles)
+            for node in lengths:
+                if lengths[node] > tree_depth:
+                    final.remove_node(node)
+                else:
+                    pass
+        else:
+            pass
+
         print("Saving network to: {}".format(abspath(filename)))
         if use_graphviz:
             self._draw_network_with_graphviz(final, filename=filename)

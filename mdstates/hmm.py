@@ -1,6 +1,6 @@
 import numpy as np
 
-from .hmm_cython import decoder_cpp
+from .hmm_cython import decode_cpp
 
 __all__ = ['generate_ignore_list', 'viterbi', 'viterbi_wrapper']
 
@@ -27,12 +27,12 @@ def generate_ignore_list(cmat, n):
         for `ignore_list[1]`.
     """
     ignore_list = [[], []]
-    n_atoms = cmat.shape[1]
+    n_atoms = cmat.shape[0]
 
     for i in range(n_atoms - 1):
         for j in range(i + 1, n_atoms):
             # Find all unique values and their respective counts
-            values, counts = np.unique(cmat[:, i, j], return_counts=True)
+            values, counts = np.unique(cmat[i, j, :], return_counts=True)
             unique = dict(zip(values, counts))
 
             # If 0 or 1 never appear, place that index on

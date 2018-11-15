@@ -2,6 +2,8 @@ import networkx as nx
 import numpy as np
 from rdkit import Chem
 
+from .reactionoperator import BEMatrix
+
 
 def contact_matrix_to_SMILES(cmat, atom_list):
     """Converts a contact matrix to a SMILES string.
@@ -160,4 +162,16 @@ def set_positive_charges(mol):
             atom.SetFormalCharge(charge)
         else:
             pass
+    return
+
+
+def molecule_to_contact_matrix(mol):
+    pt = Chem.GetPeriodicTable()
+    dim = mol.GetNumAtoms(onlyExplicit=False)
+    cmat = np.zeros((dim, dim), dtype=np.int32)
+    atom_list = [atom.GetSymbol() for atom in mol.GetAtoms()]
+    # for bond in mol.GetBonds():
+        # atom_list.append(atom.GetSymbol())
+        # cmat[i
+        # print(atom.GetTotalDegree())
     return

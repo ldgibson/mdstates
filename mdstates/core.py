@@ -1,5 +1,6 @@
 from numbers import Number
 from itertools import combinations
+import re
 from os.path import abspath, dirname, join
 
 import mdtraj as md
@@ -367,7 +368,6 @@ class Network:
                 run_indices_i = []
                 run_indices_j = []
                 ignore_list = generate_ignore_list(rep['cmat'], n)
-                print(ignore_list)
 
                 # if cores == 1:
                 for i in range(self.n_atoms - 1):
@@ -466,7 +466,7 @@ class Network:
 
     def draw_overall_network(self, filename='overall.png', exclude=[],
                              SMILES_loc='SMILESimages', use_LR=False,
-                             use_graphviz=False, **kwargs):
+                             use_graphviz=False, tree_depth=None, **kwargs):
         """Builds networks for all replicas and combines them.
 
         Parameters
@@ -488,11 +488,21 @@ class Network:
 
         self._build_all_networks(**kwargs_to_pass)
 
-        print("Saving SMILES images to: {}".format(abspath(SMILES_loc)))
+        # print("Saving SMILES images to: {}".format(abspath(SMILES_loc)))
         compiled = self._compile_networks(exclude=exclude)
         self.network = compiled
-        # calculate_all_jp(compiled, len(self.replica) - len(exclude))
         final = prepare_graph(compiled, root_node=self._first_smiles, **kwargs)
+
+        # Remove all nodes that are beyond a threshold tree depth.
+        if tree_depth:
+            lengths = nx.shortest_path_length(final, source=self._first_smiles)
+            for node in lengths:
+                if lengths[node] > tree_depth:
+                    final.remove_node(node)
+                else:
+                    pass
+        else:
+            pass
 
         print("Saving network to: {}".format(abspath(filename)))
         if use_graphviz:
@@ -927,3 +937,82 @@ class Network:
         topology_path = join(parent_dir, top_name)
         mol.write('pdb', topology_path, overwrite=True)
         return topology_path
+
+    def save(self, name):
+        """Saves the current state of the reaction network as a txt.
+
+        This saves the SMILES list and frames that each SMILES state
+        is associated with in a text file.
+
+        Parameters
+        ----------
+        name : str
+            Name of the checkpoint file.
+        """
+        for i, rep in enumerate(self.replica):
+            if rep['smiles']:
+                pass
+            else:
+                rep['smiles'] = self._generate_SMILES(i, tol=10)
+
+        with open(name + '.txt', 'w') as f:
+            f.write('{}\n'.format(self._first_smiles))
+            for i, rep in enumerate(self.replica):
+                f.write('replica{}\n'.format(i))
+                for smi, frame in rep['smiles']:
+                    f.write("{},{}\n".format(smi, frame))
+        return
+
+    def load(self, name):
+        """Loads the network from a checkpoint file.
+
+        Parameters
+        ----------
+        name : str
+            Path to the checkpoint file.
+        """
+        with open(name, 'r') as f:
+            self._first_smiles = f.readline().strip('\n')
+            for line in f.readlines():
+                if line.startswith('replica'):
+                    rep_id = int(re.search('(?<=replica)\d*', line).group(0))
+                    self.replica.append({'traj': None, 'cmat': None,
+                                         'path': None, 'processed': False,
+                                         'network': None, 'smiles': None})
+                else:
+                    data = line.strip('\n').split(',')
+                    data[1] = int(data[1])
+                    if self.replica[rep_id]['smiles']:
+                        pass
+                    else:
+                        self.replica[rep_id]['smiles'] = []
+                    self.replica[rep_id]['smiles'].append((data[0], data[1]))
+        return
+
+    def build_from_load(self, filename='overall.png', exclude=[],
+                        SMILES_loc='SMILESimages', use_LR=False,
+                        use_graphviz=False, tree_depth=None, **kwargs):
+        for rep in self.replica:
+            rep['network'] = self._build_network(rep['smiles'])
+
+        compiled = self._compile_networks(exclude=exclude)
+        self.network = compiled
+        final = prepare_graph(compiled, root_node=self._first_smiles, **kwargs)
+
+        # Remove all nodes that are beyond a threshold tree depth.
+        if tree_depth:
+            lengths = nx.shortest_path_length(final, source=self._first_smiles)
+            for node in lengths:
+                if lengths[node] > tree_depth:
+                    final.remove_node(node)
+                else:
+                    pass
+        else:
+            pass
+
+        print("Saving network to: {}".format(abspath(filename)))
+        if use_graphviz:
+            self._draw_network_with_graphviz(final, filename=filename)
+        else:
+            self._draw_network(final, filename=filename, use_LR=use_LR)
+        return

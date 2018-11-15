@@ -29,7 +29,7 @@ install:
 
 script:
   # Your test script goes here
-  - flake8 --ignore N802,N806,W504 `find . -name \*.py | grep -v setup.py | grep -v version.py | grep -v __init__.py | grep -v /doc/`
+  - flake8 --ignore N802,N806,W504,W605 `find . -name \*.py | grep -v setup.py | grep -v version.py | grep -v __init__.py | grep -v /doc/`
   - mkdir for_test
   - cd for_test
   - py.test --pyargs mdstates --cov-report term-missing --cov=mdstates

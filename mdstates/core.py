@@ -991,7 +991,8 @@ class Network:
 
     def build_from_load(self, filename='overall.png', exclude=[],
                         SMILES_loc='SMILESimages', use_LR=False,
-                        use_graphviz=False, tree_depth=None, **kwargs):
+                        use_graphviz=False, tree_depth=None, layout='dot',
+                        **kwargs):
         for rep in self.replica:
             rep['network'] = self._build_network(rep['smiles'])
 
@@ -1014,5 +1015,6 @@ class Network:
         if use_graphviz:
             self._draw_network_with_graphviz(final, filename=filename)
         else:
-            self._draw_network(final, filename=filename, use_LR=use_LR)
+            self._draw_network(final, filename=filename, use_LR=use_LR,
+                               layout=layout)
         return

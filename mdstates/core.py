@@ -443,7 +443,6 @@ class Network:
             pass
 
         smiles = []
-        mols = []
 
         for f in range(cmat.shape[2]):
             if np.isclose(frames - f, 0, atol=tol).any():

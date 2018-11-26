@@ -61,19 +61,11 @@ def build_molecule(cmat, atom_list):
     estimate_bonds(mol)
     Chem.SanitizeMol(mol)
 
-    # print('Before RemoveHs(...)')
-    # for i, atom in enumerate(mol.GetAtoms()):
-        # print("i = {}, atom id = {}".format(atom.GetIdx(), atom.GetIntProp('index')))
-
     # Keep a copy of the molecule with explicity hydrogens
     molHs = mol
 
     # Remove any unnecessary hydrogens.
     mol = Chem.RemoveHs(mol)
-
-    # print('After RemoveHs(...)')
-    # for i, atom in enumerate(molHs.GetAtoms()):
-        # print("i = {}, atom id = {}".format(atom.GetIdx(), atom.GetIntProp('index')))
 
     return mol, molHs
 
@@ -105,9 +97,6 @@ def set_structure(mol, cmat, atom_list):
             pass
 
         mol.AddBond(int(i), int(j), Chem.BondType.SINGLE)
-
-    # for i, atom in enumerate(mol.GetAtoms()):
-        # print("i = {}, atom id = {}".format(atom.GetIdx(), atom.GetIntProp('index')))
 
     # for at in mol.GetAtoms():
         # at.SetNoImplicit(True)
@@ -205,12 +194,9 @@ def molecule_to_contact_matrix(mol):
     for i, atom in enumerate(mol.GetAtoms()):
         try:
             idx = atom.GetIntProp('index')
-            string = 'index'
         except(KeyError):
             idx = i
-            string = 'noindex'
         atom_list[idx] = atom.GetSymbol()
-        # print("Atom: {}{}{}".format(atom.GetSymbol(), string, idx))
 
     for bond in mol.GetBonds():
         try:

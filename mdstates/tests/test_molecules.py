@@ -134,7 +134,7 @@ def test_set_positive_charges():
 def test_molecule_to_contact_matrix():
     mol = Chem.MolFromSmiles('c1ccccc1')
     test = molecule_to_contact_matrix(mol)
-    true_atoms = np.array(['C', 'C', 'C', 'C', 'C', 'C', 
+    true_atoms = np.array(['C', 'C', 'C', 'C', 'C', 'C',
                            'H', 'H', 'H', 'H', 'H', 'H'])
     assert np.all(test.atoms == true_atoms), "Incorrect atom list."
     return

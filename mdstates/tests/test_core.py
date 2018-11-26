@@ -314,16 +314,12 @@ def test_get_BE_matrices_from_replica():
     atoms = np.array(['C', 'H', 'H', 'H', 'Cl', 'Cl'])
     true = BEMatrix(cmat, atoms)
     assert np.all(mats[0] == true)
-    # with open('results.txt', 'w') as f:
-        # for mat in mats:
-            # print(mat, file=f)
     return
 
 
 def test_get_BEMatrices():
     net = Network()
     net.add_replica(traj_path, top_path)
-    # net.add_replica(traj_path, top_path)
     net.generate_contact_matrix()
     net.decode()
     net._build_all_networks()

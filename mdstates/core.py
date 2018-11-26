@@ -445,8 +445,10 @@ class Network:
         smiles = []
 
         for f in range(cmat.shape[2]):
-            if np.isclose(frames - f, 0, atol=tol).any():
-                smi, mol = contact_matrix_to_SMILES(cmat[:, :, f], self.atoms)
+            # This bool returns `True` if the current frame `f` is at
+            # most `tol` greater than any of the values in `frames`.
+            if np.any((f - frames < tol) & (f - frames >= 0)):
+                smi = contact_matrix_to_SMILES(cmat[:, :, f], self.atoms)
                 frame = find_nearest(f, frames)
                 smiles.append((smi, frame, mol))
                 # mols.append((mol, frame))

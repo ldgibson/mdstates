@@ -7,6 +7,7 @@ import numpy as np
 import networkx as nx
 
 from ..core import Network
+from ..reactionoperator import BEMatrix
 
 currentdir = os.path.dirname(__file__)
 testdir = os.path.join(currentdir, 'test_cases')
@@ -268,8 +269,8 @@ def test_get_atoms():
 
 
 def test_build_network():
-    test_list = [('C', 0), ('O', 6), ('C', 11),
-                 ('CC', 20), ('CCC', 34)]
+    test_list = [('C', 0, None), ('O', 6, None), ('C', 11, None),
+                 ('CC', 20, None), ('CCC', 34, None)]
     true_net = nx.DiGraph()
     true_net.add_node('C', count=2, traj_count=1)
     true_net.add_node('O', count=1, traj_count=1)
@@ -293,6 +294,50 @@ def test_build_network():
         assert (u, v) in test_net.edges
         for d in data:
             assert data[d] == test_net.edges[(u, v)][d]
+    return
+
+
+def test_get_BE_matrices_from_replica():
+    net = Network()
+    net.add_replica(traj_path, top_path)
+    net.generate_contact_matrix()
+    net.decode()
+    net._build_all_networks()
+
+    mats = net.get_BE_matrices_from_replica(0)
+    cmat = np.array([[0, 1, 1, 1, 1, 0],
+                     [1, 0, 0, 0, 0, 0],
+                     [1, 0, 0, 0, 0, 0],
+                     [1, 0, 0, 0, 0, 0],
+                     [1, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 0, 0, 0]])
+    atoms = np.array(['C', 'H', 'H', 'H', 'Cl', 'Cl'])
+    true = BEMatrix(cmat, atoms)
+    assert np.all(mats[0] == true)
+    # with open('results.txt', 'w') as f:
+        # for mat in mats:
+            # print(mat, file=f)
+    return
+
+
+def test_get_BEMatrices():
+    net = Network()
+    net.add_replica(traj_path, top_path)
+    # net.add_replica(traj_path, top_path)
+    net.generate_contact_matrix()
+    net.decode()
+    net._build_all_networks()
+
+    mats = net.get_BEMatrices()
+    cmat = np.array([[0, 1, 1, 1, 1, 0],
+                     [1, 0, 0, 0, 0, 0],
+                     [1, 0, 0, 0, 0, 0],
+                     [1, 0, 0, 0, 0, 0],
+                     [1, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 0, 0, 0]])
+    atoms = np.array(['C', 'H', 'H', 'H', 'Cl', 'Cl'])
+    true = BEMatrix(cmat, atoms)
+    assert np.all(mats[0][0] == true)
     return
 
 

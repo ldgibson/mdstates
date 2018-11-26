@@ -1,6 +1,7 @@
 import networkx as nx
 import numpy as np
 from rdkit import Chem
+from rdkit.Chem.rdchem import BondType
 
 from .reactionoperator import BEMatrix
 
@@ -23,12 +24,12 @@ def contact_matrix_to_SMILES(cmat, atom_list):
     """
 
     # Build the molecule
-    mol = build_molecule(cmat, atom_list)
+    mol, molHs = build_molecule(cmat, atom_list)
 
     # Generate SMILES string from molecule
     smiles = Chem.MolToSmiles(mol)
 
-    return smiles
+    return (smiles, molHs)
 
 
 def build_molecule(cmat, atom_list):
@@ -60,9 +61,21 @@ def build_molecule(cmat, atom_list):
     estimate_bonds(mol)
     Chem.SanitizeMol(mol)
 
+    # print('Before RemoveHs(...)')
+    # for i, atom in enumerate(mol.GetAtoms()):
+        # print("i = {}, atom id = {}".format(atom.GetIdx(), atom.GetIntProp('index')))
+
+    # Keep a copy of the molecule with explicity hydrogens
+    molHs = mol
+
     # Remove any unnecessary hydrogens.
     mol = Chem.RemoveHs(mol)
-    return mol
+
+    # print('After RemoveHs(...)')
+    # for i, atom in enumerate(molHs.GetAtoms()):
+        # print("i = {}, atom id = {}".format(atom.GetIdx(), atom.GetIntProp('index')))
+
+    return mol, molHs
 
 
 def set_structure(mol, cmat, atom_list):
@@ -77,8 +90,11 @@ def set_structure(mol, cmat, atom_list):
     cmat : numpy.ndarray
     atom_list : list"""
 
-    for atom in atom_list:
-        mol.AddAtom(Chem.Atom(atom))
+    for i, atom in enumerate(atom_list):
+        newatom = Chem.Atom(atom)
+        newatom.SetNoImplicit(True)
+        newatom.SetIntProp('index', i)
+        mol.AddAtom(newatom)
 
     for i, j in zip(*np.where(cmat[:, :] == 1)):
         if mol.GetAtomWithIdx(int(i)).GetSymbol() == 'Li':
@@ -90,8 +106,11 @@ def set_structure(mol, cmat, atom_list):
 
         mol.AddBond(int(i), int(j), Chem.BondType.SINGLE)
 
-    for at in mol.GetAtoms():
-        at.SetNoImplicit(True)
+    # for i, atom in enumerate(mol.GetAtoms()):
+        # print("i = {}, atom id = {}".format(atom.GetIdx(), atom.GetIntProp('index')))
+
+    # for at in mol.GetAtoms():
+        # at.SetNoImplicit(True)
 
     return
 
@@ -166,12 +185,53 @@ def set_positive_charges(mol):
 
 
 def molecule_to_contact_matrix(mol):
-    pt = Chem.GetPeriodicTable()
+    """Converts an RDKit molecule into a contact matrix.
+
+    Parameters
+    ----------
+    mol : rdkit.Chem.rdchem.Mol
+
+    Returns
+    -------
+    mdstates.reactionoperator.BEMatrix
+        Contact matrix for the given molecule where `1` denotes a
+        single bond, `2` a double bond, and `3` a triple bond."""
+
+    mol = Chem.AddHs(mol)
+    Chem.Kekulize(mol)
     dim = mol.GetNumAtoms(onlyExplicit=False)
     cmat = np.zeros((dim, dim), dtype=np.int32)
-    atom_list = [atom.GetSymbol() for atom in mol.GetAtoms()]
-    # for bond in mol.GetBonds():
-        # atom_list.append(atom.GetSymbol())
-        # cmat[i
-        # print(atom.GetTotalDegree())
-    return
+    atom_list = np.empty(dim, dtype='U8')
+    for i, atom in enumerate(mol.GetAtoms()):
+        try:
+            idx = atom.GetIntProp('index')
+            string = 'index'
+        except(KeyError):
+            idx = i
+            string = 'noindex'
+        atom_list[idx] = atom.GetSymbol()
+        # print("Atom: {}{}{}".format(atom.GetSymbol(), string, idx))
+
+    for bond in mol.GetBonds():
+        try:
+            atom1_idx = bond.GetBeginAtom().GetIntProp('index')
+            atom2_idx = bond.GetEndAtom().GetIntProp('index')
+        except(KeyError):
+            atom1_idx = bond.GetBeginAtom().GetIdx()
+            atom2_idx = bond.GetEndAtom().GetIdx()
+
+        if atom1_idx < atom2_idx:
+            i = atom1_idx
+            j = atom2_idx
+        else:
+            j = atom1_idx
+            i = atom2_idx
+
+        if bond.GetBondType() == BondType.SINGLE:
+            cmat[i, j] = 1
+        elif bond.GetBondType() == BondType.DOUBLE:
+            cmat[i, j] = 2
+        else:
+            cmat[i, j] = 3
+    bemat = BEMatrix(cmat, atom_list)
+    return bemat

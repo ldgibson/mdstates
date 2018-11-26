@@ -13,7 +13,7 @@ from .data import radii
 from .graphs import combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .hmm_cython import decode_cpp   # , viterbi_cpp
-from .molecules import contact_matrix_to_SMILES
+from .molecules import contact_matrix_to_SMILES, molecule_to_contact_matrix
 from .smiles import (remove_consecutive_repeats, save_unique_SMILES,
                      find_reaction)
 from .util import find_nearest
@@ -367,7 +367,6 @@ class Network:
                 run_indices_i = []
                 run_indices_j = []
                 ignore_list = generate_ignore_list(rep['cmat'], n)
-                print(ignore_list)
 
                 # if cores == 1:
                 for i in range(self.n_atoms - 1):
@@ -429,35 +428,38 @@ class Network:
         frames = np.array(self.frames[rep_id].copy())
         cmat = self.replica[rep_id]['cmat']
 
+        _, first_mol = contact_matrix_to_SMILES(cmat[:, :, 0], self.atoms)
+        last_smiles, last_mol = contact_matrix_to_SMILES(cmat[:, :, -1],
+                                                         self.atoms)
         # if not frames:
         if frames.size == 0:
             num_frames = cmat.shape[2]
-            last_smiles = contact_matrix_to_SMILES(cmat[:, :, -1], self.atoms)
             if last_smiles == self._first_smiles:
-                return [(self._first_smiles, 0)]
+                return [(self._first_smiles, 0, first_mol)]
             else:
-                return [(self._first_smiles, 0),
-                        (last_smiles, num_frames - 1)]
+                return [(self._first_smiles, 0, first_mol),
+                        (last_smiles, num_frames - 1, first_mol)]
         else:
             pass
 
         smiles = []
+        mols = []
 
         for f in range(cmat.shape[2]):
             if np.isclose(frames - f, 0, atol=tol).any():
-                smi = contact_matrix_to_SMILES(cmat[:, :, f], self.atoms)
+                smi, mol = contact_matrix_to_SMILES(cmat[:, :, f], self.atoms)
                 frame = find_nearest(f, frames)
-                smiles.append((smi, frame))
+                smiles.append((smi, frame, mol))
+                # mols.append((mol, frame))
             else:
                 pass
 
-        last_smiles = contact_matrix_to_SMILES(cmat[:, :, -1], self.atoms)
-        smiles.append((last_smiles, cmat.shape[2] - 1))
+        smiles.append((last_smiles, cmat.shape[2] - 1, last_mol))
 
         reduced_smiles = remove_consecutive_repeats(smiles)
 
         if reduced_smiles[0][0] != self._first_smiles:
-            reduced_smiles.insert(0, (self._first_smiles, 0))
+            reduced_smiles.insert(0, (self._first_smiles, 0, first_mol))
         else:
             pass
 
@@ -769,11 +771,11 @@ class Network:
         network : networkx.DiGraph
         """
 
-        save_unique_SMILES([smi for smi, _ in smiles_list])
+        save_unique_SMILES([smi[0] for smi in smiles_list])
 
         network = nx.DiGraph()
 
-        for i, (smi, f) in enumerate(smiles_list):
+        for i, (smi, f, mol) in enumerate(smiles_list):
             # If the current SMILES string is missing in the network
             # graph, then add it.
             if not network.has_node(smi):
@@ -909,8 +911,8 @@ class Network:
                                          self._pairs, periodic=self.pbc)
         distances = self._reshape_to_square(distances)
         cmat = self._build_connections(distances)
-        self._first_smiles = contact_matrix_to_SMILES(cmat[..., 0],
-                                                      self.atoms)
+        self._first_smiles, _ = contact_matrix_to_SMILES(cmat[..., 0],
+                                                         self.atoms)
         return
 
     def _traj_to_topology(self, traj, format='xyz'):
@@ -927,3 +929,24 @@ class Network:
         topology_path = join(parent_dir, top_name)
         mol.write('pdb', topology_path, overwrite=True)
         return topology_path
+
+    def get_BEMatrices(self):
+        be_matrices = []
+        for i in range(len(self.replica)):
+            # be_matrices.append([])
+            matrices = self.get_BE_matrices_from_replica(i)
+            be_matrices.append(matrices)
+        return be_matrices
+
+    def get_BE_matrices_from_replica(self, repid):
+        be_matrices = []
+        for smi, f, mol in self.replica[repid]['smiles']:
+            be_matrices.append(molecule_to_contact_matrix(mol))
+        return be_matrices
+
+    def get_reaction_operators(self):
+        # be_matrices = self.get_BEMatrices()
+        # for replica in be_matrices:
+            # for mat in replica:
+        pass
+        return

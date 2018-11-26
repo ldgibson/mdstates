@@ -1,8 +1,22 @@
 import numpy as np
 from rdkit import Chem
 
-from ..molecules import set_structure, estimate_bonds, build_radical_graph,\
-    set_positive_charges
+from ..molecules import (set_structure, estimate_bonds, build_radical_graph,
+                         set_positive_charges, molecule_to_contact_matrix,
+                         contact_matrix_to_SMILES)
+
+
+def test_contact_matrix_to_SMILES():
+    cmat = np.array([[0, 1, 1, 1, 0, 1],
+                     [0, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 0, 0, 0]])
+    atoms = ['C', 'H', 'H', 'H', 'Cl', 'Cl']
+    test_smi, _ = contact_matrix_to_SMILES(cmat, atoms)
+    assert test_smi == 'CCl.[Cl]'
+    return
 
 
 def test_set_structure():
@@ -114,4 +128,13 @@ def test_set_positive_charges():
 
     assert mol.GetAtomWithIdx(0).GetFormalCharge() == 1,\
         "Oxygen must have a positive charge."
+    return
+
+
+def test_molecule_to_contact_matrix():
+    mol = Chem.MolFromSmiles('c1ccccc1')
+    test = molecule_to_contact_matrix(mol)
+    true_atoms = np.array(['C', 'C', 'C', 'C', 'C', 'C', 
+                           'H', 'H', 'H', 'H', 'H', 'H'])
+    assert np.all(test.atoms == true_atoms), "Incorrect atom list."
     return

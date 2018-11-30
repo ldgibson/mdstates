@@ -104,8 +104,10 @@ class BEMatrix:
 
 class ReactionOperator:
     def __init__(self, reactant, product, atoms=np.array([])):
-        assert reactant.shape[0] == reactant.shape[1], "Array must be square."
-        assert product.shape[0] == product.shape[1], "Array must be square."
+        assert reactant.array.shape[0] == reactant.array.shape[1],\
+            "Array must be square."
+        assert product.array.shape[0] == product.array.shape[1],\
+            "Array must be square."
 
         if isinstance(atoms, np.ndarray):
             if atoms.dtype == "U8":
@@ -121,8 +123,16 @@ class ReactionOperator:
             self.atoms = np.array(["XX{}".format(i) for i in
                                    range(reactant.shape[0])])
 
-        self.reactant = BEMatrix(reactant, self.atoms)
-        self.product = BEMatrix(product, self.atoms)
+        if not isinstance(reactant, BEMatrix):
+            self.reactant = BEMatrix(reactant, self.atoms)
+        else:
+            self.reactant = reactant
+            self.reactant.atoms = self.atoms
+        if not isinstance(product, BEMatrix):
+            self.product = BEMatrix(product, self.atoms)
+        else:
+            self.product = product
+            self.reactant.atoms = self.atoms
         self.operator = self._get_reaction_operator(self.reactant,
                                                     self.product)
         return

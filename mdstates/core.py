@@ -14,6 +14,7 @@ from .graphs import combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .hmm_cython import decode_cpp   # , viterbi_cpp
 from .molecules import contact_matrix_to_SMILES, molecule_to_contact_matrix
+from .reactionoperator import ReactionOperator
 from .smiles import (remove_consecutive_repeats, save_unique_SMILES,
                      find_reaction)
 from .util import find_nearest
@@ -448,7 +449,7 @@ class Network:
             # This bool returns `True` if the current frame `f` is at
             # most `tol` greater than any of the values in `frames`.
             if np.any((f - frames < tol) & (f - frames >= 0)):
-                smi = contact_matrix_to_SMILES(cmat[:, :, f], self.atoms)
+                smi, mol = contact_matrix_to_SMILES(cmat[:, :, f], self.atoms)
                 frame = find_nearest(f, frames)
                 smiles.append((smi, frame, mol))
                 # mols.append((mol, frame))
@@ -946,8 +947,17 @@ class Network:
         return be_matrices
 
     def get_reaction_operators(self):
-        # be_matrices = self.get_BEMatrices()
-        # for replica in be_matrices:
-            # for mat in replica:
-        pass
-        return
+        reaction_operators = []
+        be_matrices = self.get_BEMatrices()
+        for replica in be_matrices:
+            reaction_operators.append([])
+            for i, mat in enumerate(replica[:-1]):
+                reactant = mat
+                product = replica[i + 1]
+                if np.all(reactant == product):
+                    continue
+                else:
+                    pass
+                ro = ReactionOperator(reactant, product, reactant.atoms)
+                reaction_operators[-1].append(ro)
+        return reaction_operators

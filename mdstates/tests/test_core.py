@@ -337,6 +337,19 @@ def test_get_BEMatrices():
     return
 
 
+def test_get_reaction_operators():
+    net = Network()
+    net.add_replica(traj_path, top_path)
+    net.generate_contact_matrix()
+    net.decode()
+    net._build_all_networks()
+    ros = net.get_reaction_operators()
+    for rep in ros:
+        for ro in rep:
+            print(ro)
+    return
+
+
 def test_generate_SMILES():
     pass
     return

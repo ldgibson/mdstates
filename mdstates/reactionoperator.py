@@ -5,10 +5,13 @@ import pandas as pd
 
 
 class AtomList:
-    def __init__(self, atoms):
-        self.df = pd.DataFrame({'symbol': atoms,
-                                'label': self._enumerate_atoms(atoms),
-                                'index': range(len(atoms))})
+    def __init__(self, atoms, _df=None):
+        if _df is None:
+            self.df = pd.DataFrame({'symbol': atoms,
+                                    'label': self._enumerate_atoms(atoms),
+                                    'index': range(len(atoms))})
+        else:
+            self.df = _df
         self.symbols = self.df.loc[:, 'symbol'].values
         self.labels = self.df.loc[:, 'label'].values
         return
@@ -36,6 +39,18 @@ class AtomList:
     def __repr__(self):
         return self.__str__()
 
+    def __eq__(self, other):
+        if isinstance(other, AtomList):
+            return self.labels == other.labels
+        else:
+            raise TypeError("Both objects just be AtomList objects.")
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __len__(self):
+        return len(self.df)
+
     def _enumerate_atoms(self, atoms_list):
         atoms_array = np.array(atoms_list, dtype="U8")
         count_dict = {atom: 0 for atom in np.unique(atoms_array)}
@@ -46,13 +61,15 @@ class AtomList:
 
 
 class BEMatrix:
-    def __init__(self, array, atoms=[]):
+    def __init__(self, array, atoms=None):
         if np.all(np.tril(array, -1) == 0):
             array = array + np.transpose(array, [1, 0])
         else:
             pass
+
         self.array = array
         self.atoms = atoms
+        return
 
     def __str__(self):
         print_string = ""
@@ -72,7 +89,7 @@ class BEMatrix:
             else:
                 pass
 
-            print_string += "{:<3} [".format(self.atoms[i])
+            print_string += "{:<3} [".format(self.atoms[i].label)
             print_string += "{:>-2d}".format(self.array[i, 0])
 
             for j in j_indices:
@@ -89,6 +106,26 @@ class BEMatrix:
     def __repr__(self):
         return self.__str__()
 
+    def __getitem__(self, idx):
+        new_mat = BEMatrix(self.array[idx, idx], self.atoms[idx].symbol.tolist())
+        return new_mat
+
+    def __setitem__(self, idx, val):
+        self.array[idx, idx] = val
+        return
+
+    def __delitem__(self, idx):
+        if isinstance(idx, slice):
+            if idx.step is None:
+                idx = list(range(idx.start, idx.stop))
+            else:
+                idx = list(range(idx.start, idx.stop, idx.step))
+        else:
+            pass
+        rows_deleted = np.delete(self.array, idx, 0)
+        op = np.delete(rows_deleted, idx, 1)
+        del self.array[idx, idx]
+
     def __eq__(self, other):
         if isinstance(other, BEMatrix):
             if np.all(other.atoms == self.atoms):
@@ -101,27 +138,53 @@ class BEMatrix:
     def __ne__(self, other):
         return self.__eq__(other)
 
+    def __sub__(self, other):
+        assert np.all(self.atoms == other.atoms),\
+            "Both objects must be BEMatrix objects."
+        result = BEMatrix(self.array - other.array, self.atoms)
+        return result
+
+    @property
+    def atoms(self):
+        return self.__atoms
+
+    @atoms.setter
+    def atoms(self, values):
+        if values is None:
+            self.__atoms = AtomList(np.array(["XX".format(i) for i in
+                                              range(self.array.shape[0])]))
+        else:
+            if isinstance(values, AtomList):
+                self.__atoms = values
+                self.atoms.df.index = range(len(values.df))
+            else:
+                self.__atoms = AtomList(values)
+        return
+
 
 class ReactionOperator:
-    def __init__(self, reactant, product, atoms=np.array([])):
+    def __init__(self, reactant, product, atoms=None):
         assert reactant.array.shape[0] == reactant.array.shape[1],\
             "Array must be square."
         assert product.array.shape[0] == product.array.shape[1],\
             "Array must be square."
 
-        if isinstance(atoms, np.ndarray):
-            if atoms.dtype == "U8":
-                pass
-            else:
-                atoms.dtype = "U8"
-        else:
-            atoms = np.array(atoms, dtype="U8")
+        # if isinstance(atoms, np.ndarray):
+            # if atoms.dtype == "U8":
+                # pass
+            # else:
+                # atoms.dtype = "U8"
+        # else:
+            # atoms = np.array(atoms, dtype="U8")
 
-        if atoms.size > 0:
-            self.atoms = self._enumerate_atoms(atoms)
+        if atoms is None:
+            self.atoms = AtomList(np.array(["XX".format(i) for i in
+                                            range(reactant.array.shape[0])]))
         else:
-            self.atoms = np.array(["XX{}".format(i) for i in
-                                   range(reactant.shape[0])])
+            if isinstance(atoms, AtomList):
+                self.atoms = atoms
+            else:
+                self.atoms = AtomList(atoms)
 
         if not isinstance(reactant, BEMatrix):
             self.reactant = BEMatrix(reactant, self.atoms)
@@ -141,6 +204,9 @@ class ReactionOperator:
         return self.operator.__str__()
 
     def __repr__(self):
+        return self.operator.__str__()
+
+    def show_reactant_to_product(self):
         react_str = self.reactant.__str__().split('\n')
         prod_str = self.product.__str__().split('\n')
         join_str = "     "
@@ -155,7 +221,9 @@ class ReactionOperator:
                 joined.append(join_str.join([line1, line2]))
             else:
                 joined.append(join_str_arrow.join([line1, line2]))
-        return '\n'.join(joined)
+        print('\n'.join(joined))
+        # return '\n'.join(joined)
+        return
 
     def _enumerate_atoms(self, atoms_list):
         atoms_array = np.array(atoms_list, dtype="U8")
@@ -173,7 +241,9 @@ class ReactionOperator:
         rows_deleted = np.delete(diff, zero_indices, 0)
         op = np.delete(rows_deleted, zero_indices, 1)
         bematrix_op = BEMatrix(op)
-        bematrix_op.atoms = reactant.atoms[nonzero_indices]
+        reaction_operator_atoms = reactant.atoms[nonzero_indices]
+        reaction_operator_atoms.index = range(len(reactant.atoms[nonzero_indices]))
+        bematrix_op.atoms = AtomList(None, reaction_operator_atoms)
         return bematrix_op
 
     def _get_zero_columns(self, arr):

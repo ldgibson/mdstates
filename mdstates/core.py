@@ -939,6 +939,12 @@ class Network:
         name : str
             Name of the checkpoint file.
         """
+        for i, rep in enumerate(self.replica):
+            if rep['smiles']:
+                pass
+            else:
+                rep['smiles'] = self._generate_SMILES(i, tol=10)
+
         with open(name + '.txt', 'w') as f:
             f.write('{}\n'.format(self._first_smiles))
             for i, rep in enumerate(self.replica):
@@ -978,6 +984,9 @@ class Network:
     def build_from_load(self, filename='overall.png', exclude=[],
                         SMILES_loc='SMILESimages', use_LR=False,
                         use_graphviz=False, **kwargs):
+        for rep in self.replica:
+            rep['network'] = self._build_network(rep['smiles'])
+
         compiled = self._compile_networks(exclude=exclude)
         self.network = compiled
         final = prepare_graph(compiled, root_node=self._first_smiles, **kwargs)

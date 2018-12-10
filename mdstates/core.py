@@ -943,21 +943,28 @@ class Network:
     def get_BE_matrices_from_replica(self, repid):
         be_matrices = []
         for smi, f, mol in self.replica[repid]['smiles']:
-            be_matrices.append(molecule_to_contact_matrix(mol))
+            be_matrices.append((molecule_to_contact_matrix(mol), smi))
         return be_matrices
 
-    def get_reaction_operators(self):
+    def get_reaction_operators(self, atom_labels=None):
         reaction_operators = []
         be_matrices = self.get_BEMatrices()
         for replica in be_matrices:
             reaction_operators.append([])
             for i, mat in enumerate(replica[:-1]):
-                reactant = mat
-                product = replica[i + 1]
+                reactant = mat[0]
+                product = replica[i + 1][0]
+                if atom_labels is not None:
+                    reactant.atoms = atom_labels
+                    product.atoms = atom_labels
+                else:
+                    pass
+
                 if np.all(reactant == product):
                     continue
                 else:
                     pass
-                ro = ReactionOperator(reactant, product, reactant.atoms)
-                reaction_operators[-1].append(ro)
+                ro = ReactionOperator(reactant, product)
+                reaction_operators[-1].append((ro, mat[1],
+                                               replica[i + 1][1]))
         return reaction_operators

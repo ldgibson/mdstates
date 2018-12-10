@@ -219,5 +219,5 @@ def molecule_to_contact_matrix(mol):
             cmat[i, j] = 2
         else:
             cmat[i, j] = 3
-    bemat = BEMatrix(cmat, atom_list)
+    bemat = BEMatrix(cmat, atom_list.tolist())
     return bemat

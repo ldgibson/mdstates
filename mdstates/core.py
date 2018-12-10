@@ -829,7 +829,7 @@ class Network:
 
         return overall_network
 
-    def _build_all_networks(self, **kwargs):
+    def _build_all_networks(self, tree_depth=None, **kwargs):
         """Builds networks for all replicas."""
         for rep_id, rep in enumerate(self.replica):
             smiles_list = self._generate_SMILES(rep_id, **kwargs)
@@ -839,6 +839,17 @@ class Network:
             #     rep['network'] = self._build_network(smiles_list)
             # else:
             #     pass
+        if tree_depth:
+            for rep in self.replica:
+                lengths = nx.shortest_path_length(rep['network'],
+                                                  source=self._first_smiles)
+                for node in lengths:
+                    if lengths[node] > tree_depth:
+                        rep['network'].remove_node(node)
+                    else:
+                        pass
+        else:
+            pass
         return
 
     def _draw_network(self, nxgraph, filename, layout="dot", write=True,
@@ -942,8 +953,11 @@ class Network:
 
     def get_BE_matrices_from_replica(self, repid):
         be_matrices = []
-        for smi, f, mol in self.replica[repid]['smiles']:
-            be_matrices.append((molecule_to_contact_matrix(mol), smi))
+        if self.replica[repid]['smiles']:
+            for smi, f, mol in self.replica[repid]['smiles']:
+                be_matrices.append((molecule_to_contact_matrix(mol), smi))
+        else:
+            pass
         return be_matrices
 
     def get_reaction_operators(self, atom_labels=None):
@@ -954,17 +968,17 @@ class Network:
             for i, mat in enumerate(replica[:-1]):
                 reactant = mat[0]
                 product = replica[i + 1][0]
-                if atom_labels is not None:
+                if atom_labels is None:
+                    pass
+                else:
                     reactant.atoms = atom_labels
                     product.atoms = atom_labels
-                else:
-                    pass
 
                 if np.all(reactant == product):
                     continue
                 else:
                     pass
                 ro = ReactionOperator(reactant, product)
-                reaction_operators[-1].append((ro, mat[1],
+                reaction_operators[-1].append((ro.operator, mat[1],
                                                replica[i + 1][1]))
         return reaction_operators

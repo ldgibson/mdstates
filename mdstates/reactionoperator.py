@@ -529,11 +529,11 @@ def sort_BEMatrix(mat, sort_priority):
     return new2
 
 
-def get_unique(matrix_list):
+def get_unique(matrix_list, sort_priority):
     unique = []
 
     for i, op in enumerate(matrix_list):
-        sorted_operator = sort_BEMatrix(op, sort_order)
+        sorted_operator = sort_BEMatrix(op, sort_priority)
         if unique:
             for op2 in unique:
                 if np.all(sorted_operator.is_equal(op2)):

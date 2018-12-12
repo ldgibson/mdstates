@@ -22,6 +22,17 @@ from .util import find_nearest
 __all__ = ['Network']
 
 
+"""TODO:
+    Separate the `replica['smiles']` values into 3 appropriate
+        quantities. Currently `replica['smiles']` holds the
+        SMILES string, the frame number, and the rdkit.RWMol
+        with added explicit hydrogens.
+    Build a new class to replace `Network.replica` attribute.
+        This object should contain all of the information about
+        the replica and should be easily indexed.
+"""
+
+
 class Network:
     """
     Analyze different states and transitions of an MD trajectory.

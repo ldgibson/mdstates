@@ -1,4 +1,5 @@
 import networkx as nx
+from networkx.readwrite import json_graph
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem.rdchem import BondType
@@ -221,3 +222,63 @@ def molecule_to_contact_matrix(mol):
             cmat[i, j] = 3
     bemat = BEMatrix(cmat, atom_list.tolist())
     return bemat
+
+
+def molecule_to_nxgraph(mol):
+    """Converts an rdkit molecule to a networkx graph."""
+    mol = Chem.AddHs(mol)
+    Chem.Kekulize(mol)
+    gmol = nx.Graph()
+    for bond in mol.GetBonds():
+        at1 = bond.GetBeginAtom().GetSymbol()
+        at1_id = bond.GetBeginAtom().GetIdx()
+
+        at2 = bond.GetEndAtom().GetSymbol()
+        at2_id = bond.GetEndAtom().GetIdx()
+
+        if bond.GetBondType() == BondType.SINGLE:
+            bond_order = 1
+        elif bond.GetBondType() == BondType.DOUBLE:
+            bond_order = 2
+        elif bond.GetBondType() == BondType.TRIPLE:
+            bond_order = 3
+        else:
+            raise Exception("Bond type not recognized.")
+
+        gmol.add_node(at1_id, symbol=at1)
+        gmol.add_node(at2_id, symbol=at2)
+        gmol.add_edge(at1_id, at2_id, bond_order=bond_order)
+    return gmol
+
+
+def nxgraph_to_molecule(graph):
+    """Converts a networkx graph to an rdkit molecule."""
+    mol = Chem.RWMol()
+    for at, data in sorted(graph.nodes(data=True)):
+        idx = mol.AddAtom(Chem.Atom(data['symbol']))
+        if at != idx:
+            raise Exception("Wrong atom index assigned.")
+        else:
+            pass
+
+    for at1, at2, data in graph.edges(data=True):
+        if data['bond_order'] == 1:
+            bond_order = BondType.SINGLE
+        elif data['bond_order'] == 2:
+            bond_order = BondType.DOUBLE
+        elif data['bond_order'] == 3:
+            bond_order = BondType.TRIPLE
+        mol.AddBond(at1, at2, order=bond_order)
+
+    Chem.SanitizeMol(mol)
+    return mol
+
+
+def nxgraph_to_json(graph):
+    """Converts a networkx graph to a json-like dictionary."""
+    return json_graph.node_link_data(graph)
+
+
+def json_to_nxgraph(jsgraph):
+    """Converts a json-like dictionary to a networkx graph."""
+    return json_graph.node_link_graph(jsgraph)

@@ -1,4 +1,5 @@
 import networkx as nx
+from networkx.readwrite import json_graph
 import numpy as np
 from rdkit import Chem
 
@@ -211,6 +212,7 @@ def nxgraph_to_molecule(graph):
 
     Chem.SanitizeMol(mol)
     return mol
+
 
 def nxgraph_to_json(graph):
     """Converts a networkx graph to a json-like dictionary."""

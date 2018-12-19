@@ -605,14 +605,15 @@ class Network:
         if rep_id == -1 and args:
             smiles_list = args[0]
         else:
-            assert self.replica[rep_id]['smiles'], "SMILES list is empty."
-            smiles_list = self.replica[rep_id]['smiles']
+            assert self.replica[rep_id]['structures'],\
+                "Structures list is empty."
+            smiles_list = self.replica[rep_id]['structures']['smiles'].tolist()
 
         chem_eq_list = []
-        for i, (smi, _) in enumerate(smiles_list):
+        for i, smi in enumerate(smiles_list):
             if i == 0:
                 continue
-            chem_eq_list.append(find_reaction(smiles_list[i - 1][0], smi))
+            chem_eq_list.append(find_reaction(smiles_list[i - 1], smi))
 
         return chem_eq_list
 

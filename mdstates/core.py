@@ -8,13 +8,14 @@ from multiprocessing import Manager, Process
 import networkx as nx
 from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
+import pandas as pd
 import pybel
 
 from .data import radii
 from .graphs import combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .hmm_cython import decode_cpp   # , viterbi_cpp
-from .molecules import contact_matrix_to_SMILES
+from .molecules import contact_matrix_to_SMILES, cmat_to_structure
 from .smiles import (remove_consecutive_repeats, save_unique_SMILES,
                      find_reaction)
 from .util import find_nearest
@@ -61,8 +62,9 @@ class Network:
         self.frames = []
         self.network = None
         self.topology = None
+        self.first_smiles = None
+        self.first_mol = None
 
-        self._first_smiles = None
         self._pairs = []
         self._cutoff = {}
         return
@@ -103,11 +105,11 @@ class Network:
             for _ in range(len(trajectory)):
                 self.replica.append({'traj': None, 'cmat': None, 'path': None,
                                      'processed': False, 'network': None,
-                                     'smiles': None, 'molecules': None})
+                                     'structures': None})
         else:
             self.replica.append({'traj': None, 'cmat': None, 'path': None,
                                  'processed': False, 'network': None,
-                                 'smiles': None, 'molecules': None})
+                                 'structures': None})
         if topology:
             pass
         else:
@@ -228,7 +230,7 @@ class Network:
             pass
 
         # Check if topology file has been converted to a SMILES string.
-        if self._first_smiles:
+        if self.first_smiles:
             pass
         else:
             self._traj_to_smiles()
@@ -444,10 +446,10 @@ class Network:
         if frames.size == 0:
             num_frames = cmat.shape[2]
             last_smiles = contact_matrix_to_SMILES(cmat[:, :, -1], self.atoms)
-            if last_smiles == self._first_smiles:
-                return [(self._first_smiles, 0)]
+            if last_smiles == self.first_smiles:
+                return [(self.first_smiles, 0)]
             else:
-                return [(self._first_smiles, 0),
+                return [(self.first_smiles, 0),
                         (last_smiles, num_frames - 1)]
         else:
             pass
@@ -467,13 +469,74 @@ class Network:
 
         reduced_smiles = remove_consecutive_repeats(smiles)
 
-        if reduced_smiles[0][0] != self._first_smiles:
-            reduced_smiles.insert(0, (self._first_smiles, 0))
+        if reduced_smiles[0][0] != self.first_smiles:
+            reduced_smiles.insert(0, (self.first_smiles, 0))
         else:
             pass
 
         self.replica[rep_id]['smiles'] = reduced_smiles
         return reduced_smiles
+
+    def get_structures(self, tol=10):
+        for rep_id in range(len(self.replica)):
+            self.replica[rep_id]['structures'] =\
+                self.get_structures_from_replica(rep_id, tol)
+        return
+
+    def get_structures_from_replica(self, rep_id, tol):
+        frames = np.array(self.frames[rep_id])
+        cmat = self.replica[rep_id]['cmat']
+
+        last_smiles, last_mol = cmat_to_structure(cmat[:, :, -1],
+                                                  self.atoms)
+        num_frames = cmat.shape[2]
+        if frames.size == 0:
+            if last_smiles == self.first_smiles:
+                return pd.DataFrame({'smiles': [self.first_smiles],
+                                     'molecule': [self.first_mol],
+                                     'frame': [0],
+                                     'transition_frame': [0]})
+            else:
+                return pd.DataFrame({'smiles': [self.first_smiles,
+                                                last_smiles],
+                                     'molecule': [self.first_mol,
+                                                  last_mol],
+                                     'frame': [0, num_frames - 1],
+                                     'transition_frame': [0, 0]})
+        else:
+            pass
+
+        structures = pd.DataFrame(columns=['smiles', 'molecule', 'frame',
+                                           'transition_frame'])
+
+        for f in range(cmat.shape[2]):
+            if np.isclose(frames - f, 0, atol=tol).any():
+                smi = contact_matrix_to_SMILES(cmat[:, :, f], self.atoms)
+                smi, mol = cmat_to_structure(cmat[..., f], self.atoms)
+                transition_frame = find_nearest(f, frames)
+                structures = structures.append({'smiles': smi,
+                                                'molecule': mol,
+                                                'frame': f,
+                                                'transition_frame':
+                                                    transition_frame})
+            else:
+                pass
+
+        structures = structures.append({'smiles': last_smiles,
+                                        'molecule': last_mol,
+                                        'frame': num_frames - 1,
+                                        'transition_frame': num_frames - 1})
+
+        reduced_structures = remove_consecutive_repeats(structures)
+
+        if reduced_structures.loc[0, 'smiles'] != self.first_smiles:
+            first_row = pd.DataFrame({'smiles': [self.first_smiles],
+                                      'molecule': [self.first_mol],
+                                      'frame': [0],
+                                      'transition_frame': [0]})
+            reduced_structures = pd.concat([first_row, reduced_structures],
+                                           ignore_index=True)
+        return reduced_structures
 
     def draw_overall_network(self, filename='overall.png', exclude=[],
                              SMILES_loc='SMILESimages', use_LR=False,
@@ -502,11 +565,11 @@ class Network:
         # print("Saving SMILES images to: {}".format(abspath(SMILES_loc)))
         compiled = self._compile_networks(exclude=exclude)
         self.network = compiled
-        final = prepare_graph(compiled, root_node=self._first_smiles, **kwargs)
+        final = prepare_graph(compiled, root_node=self.first_smiles, **kwargs)
 
         # Remove all nodes that are beyond a threshold tree depth.
         if tree_depth:
-            lengths = nx.shortest_path_length(final, source=self._first_smiles)
+            lengths = nx.shortest_path_length(final, source=self.first_smiles)
             for node in lengths:
                 if lengths[node] > tree_depth:
                     final.remove_node(node)
@@ -862,7 +925,7 @@ class Network:
         else:
             pass
 
-        pygraph.add_subgraph([self._first_smiles], rank='source')
+        pygraph.add_subgraph([self.first_smiles], rank='source')
         pygraph.layout(layout)
         if write:
             pygraph.write("input.dot")
@@ -876,9 +939,9 @@ class Network:
         """Draw with Python Graphviz instead of PyGraphviz."""
         from graphviz import Digraph
         g = Digraph('G', filename='graph.gv', format=format)
-        # self._first_smiles = 'O=C1OCCO1.O=C1OCCO1.[Li]'
+        # self.first_smiles = 'O=C1OCCO1.O=C1OCCO1.[Li]'
         for n, data in overall.nodes(data=True):
-            if n == self._first_smiles:
+            if n == self.first_smiles:
                 with g.subgraph(name='top') as top:
                     top.graph_attr.update(rank='source')
                     top.node(n, image=data['image'])
@@ -925,8 +988,8 @@ class Network:
                                          self._pairs, periodic=self.pbc)
         distances = self._reshape_to_square(distances)
         cmat = self._build_connections(distances)
-        self._first_smiles = contact_matrix_to_SMILES(cmat[..., 0],
-                                                      self.atoms)
+        self.first_smiles, self.first_mol = cmat_to_structure(cmat[..., 0],
+                                                              self.atoms)
         return
 
     def _traj_to_topology(self, traj, format='xyz'):
@@ -962,7 +1025,7 @@ class Network:
                 rep['smiles'] = self.generate_SMILES(i, tol=10)
 
         with open(name + '.txt', 'w') as f:
-            f.write('{}\n'.format(self._first_smiles))
+            f.write('{}\n'.format(self.first_smiles))
             for i, rep in enumerate(self.replica):
                 f.write('replica{}\n'.format(i))
                 for smi, frame in rep['smiles']:
@@ -978,7 +1041,7 @@ class Network:
             Path to the checkpoint file.
         """
         with open(name, 'r') as f:
-            self._first_smiles = f.readline().strip('\n')
+            self.first_smiles = f.readline().strip('\n')
             for line in f.readlines():
                 if line.startswith('replica'):
                     rep_id = int(re.search('(?<=replica)\d*', line).group(0))
@@ -1004,11 +1067,11 @@ class Network:
 
         compiled = self._compile_networks(exclude=exclude)
         self.network = compiled
-        final = prepare_graph(compiled, root_node=self._first_smiles, **kwargs)
+        final = prepare_graph(compiled, root_node=self.first_smiles, **kwargs)
 
         # Remove all nodes that are beyond a threshold tree depth.
         if tree_depth:
-            lengths = nx.shortest_path_length(final, source=self._first_smiles)
+            lengths = nx.shortest_path_length(final, source=self.first_smiles)
             for node in lengths:
                 if lengths[node] > tree_depth:
                     final.remove_node(node)

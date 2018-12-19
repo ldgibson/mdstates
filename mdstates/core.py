@@ -103,11 +103,11 @@ class Network:
             for _ in range(len(trajectory)):
                 self.replica.append({'traj': None, 'cmat': None, 'path': None,
                                      'processed': False, 'network': None,
-                                     'smiles': None})
+                                     'smiles': None, 'molecules': None})
         else:
             self.replica.append({'traj': None, 'cmat': None, 'path': None,
                                  'processed': False, 'network': None,
-                                 'smiles': None})
+                                 'smiles': None, 'molecules': None})
         if topology:
             pass
         else:
@@ -419,7 +419,7 @@ class Network:
 
         return
 
-    def _generate_SMILES(self, rep_id, tol=10):
+    def generate_SMILES(self, rep_id, tol=10):
         """Generates list of SMILES strings from trajectory.
 
         Parameters
@@ -849,13 +849,8 @@ class Network:
     def _build_all_networks(self, **kwargs):
         """Builds networks for all replicas."""
         for rep_id, rep in enumerate(self.replica):
-            smiles_list = self._generate_SMILES(rep_id, **kwargs)
+            smiles_list = self.generate_SMILES(rep_id, **kwargs)
             rep['network'] = self._build_network(smiles_list)
-            # if not rep['network']:
-            #     smiles_list = self.generate_SMILES(rep_id, min_lifetime)
-            #     rep['network'] = self._build_network(smiles_list)
-            # else:
-            #     pass
         return
 
     def _draw_network(self, nxgraph, filename, layout="dot", write=True,
@@ -964,7 +959,7 @@ class Network:
             if rep['smiles']:
                 pass
             else:
-                rep['smiles'] = self._generate_SMILES(i, tol=10)
+                rep['smiles'] = self.generate_SMILES(i, tol=10)
 
         with open(name + '.txt', 'w') as f:
             f.write('{}\n'.format(self._first_smiles))
@@ -989,7 +984,8 @@ class Network:
                     rep_id = int(re.search('(?<=replica)\d*', line).group(0))
                     self.replica.append({'traj': None, 'cmat': None,
                                          'path': None, 'processed': False,
-                                         'network': None, 'smiles': None})
+                                         'network': None, 'smiles': None,
+                                         'molecules': None})
                 else:
                     data = line.strip('\n').split(',')
                     data[1] = int(data[1])

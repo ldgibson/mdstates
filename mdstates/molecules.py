@@ -30,6 +30,34 @@ def contact_matrix_to_SMILES(cmat, atom_list):
     return smiles
 
 
+def cmat_to_structure(cmat, atom_list):
+    """Converts a contact matrix to a SMILES string.
+
+    Parameters
+    ----------
+    cmat : numpy.ndarray
+        Contact matrix describing connectivity in a molecule.
+    atom_list : array-like
+        Atom list with indices matching indices in contact matrix for
+        atom type identification.
+
+    Returns
+    -------
+    smiles : str
+        SMILES string of molecule built from contact matrix.
+    mol : rdkit.Chem.Mol
+        Molecule built from contact matrix.
+    """
+
+    # Build the molecule
+    mol = build_molecule(cmat, atom_list)
+
+    # Generate SMILES string from molecule
+    smiles = Chem.MolToSmiles(mol)
+
+    return smiles, mol
+
+
 def build_molecule(cmat, atom_list):
     """Builds a molecule from a contact matrix and list of atoms.
 

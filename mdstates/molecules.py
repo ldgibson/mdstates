@@ -31,7 +31,7 @@ def contact_matrix_to_SMILES(cmat, atom_list):
 
 
 def cmat_to_structure(cmat, atom_list):
-    """Converts a contact matrix to a SMILES string.
+    """Converts a contact matrix to a SMILES string and molecule.
 
     Parameters
     ----------

@@ -490,12 +490,16 @@ class Network:
         last_smiles, last_mol = cmat_to_structure(cmat[:, :, -1],
                                                   self.atoms)
         num_frames = cmat.shape[2]
+        # Handles if there are no recorded transitions.
         if frames.size == 0:
+            # If the structure has not changed.
             if last_smiles == self.first_smiles:
                 return pd.DataFrame({'smiles': [self.first_smiles],
                                      'molecule': [self.first_mol],
                                      'frame': [0],
                                      'transition_frame': [0]})
+            # If a transition happend so early that
+            # it was never detected and recorded.
             else:
                 return pd.DataFrame({'smiles': [self.first_smiles,
                                                 last_smiles],
@@ -508,10 +512,10 @@ class Network:
 
         structures = pd.DataFrame(columns=['smiles', 'molecule', 'frame',
                                            'transition_frame'])
-
         for f in range(cmat.shape[2]):
+            # If the current frame is within `tol` of any of the 
+            # transition frames in `frames`.
             if np.isclose(frames - f, 0, atol=tol).any():
-                smi = contact_matrix_to_SMILES(cmat[:, :, f], self.atoms)
                 smi, mol = cmat_to_structure(cmat[..., f], self.atoms)
                 transition_frame = find_nearest(f, frames)
                 structures = structures.append({'smiles': smi,
@@ -522,6 +526,7 @@ class Network:
             else:
                 pass
 
+        # Adds the last structure to the end.
         structures = structures.append({'smiles': last_smiles,
                                         'molecule': last_mol,
                                         'frame': num_frames - 1,
@@ -561,6 +566,10 @@ class Network:
             pass
 
         self._build_all_networks(**kwargs_to_pass)
+
+        for rep in replica:
+            smiles_list = rep['structures']['smiles'].tolist()
+            save_unique_SMILES(smiles_list)
 
         # print("Saving SMILES images to: {}".format(abspath(SMILES_loc)))
         compiled = self._compile_networks(exclude=exclude)
@@ -689,7 +698,7 @@ class Network:
         array([[0, 1, 2],
                [0, 0, 3],
                [0, 0, 0]])
-        >>> bar[:, :, 0]  # second frame
+        >>> bar[:, :, 1]  # second frame
         array([[0, 4, 5],
                [0, 0, 6],
                [0, 0, 0]])
@@ -838,7 +847,7 @@ class Network:
             self.frames[rep_id] = list(trans_frames)
         return
 
-    def _build_network(self, smiles_list):
+    def _build_network(self, rep_id):
         """Builds the network from a list of SMILES strings.
 
         Parameters
@@ -846,19 +855,19 @@ class Network:
         smiles_list : list of tuple of str and int
             List of tuples containing the SMILES string and the nearest
             transition frame.
-        image_loc : str, optional
-            Location of the folder containing all 2D SMILES structures.
 
         Returns
         -------
         network : networkx.DiGraph
         """
 
-        save_unique_SMILES([smi for smi, _ in smiles_list])
-
         network = nx.DiGraph()
 
-        for i, (smi, f) in enumerate(smiles_list):
+        structures = self.replica[rep_id]['structures']
+
+        for i, row in structures.iterrows():
+            smi = row['smiles']
+            f = row['transition_frame']
             # If the current SMILES string is missing in the network
             # graph, then add it.
             if not network.has_node(smi):
@@ -867,23 +876,22 @@ class Network:
                     network.add_node(smi, count=1, traj_count=1)
                 else:
                     network.add_node(smi, count=1, traj_count=1)
-                    network.add_edge(smiles_list[i - 1][0], smi, count=1,
+                    prev_smiles = structures.loc[i - 1, 'smiles']
+                    network.add_edge(prev_smiles, smi, count=1,
                                      traj_count=1, frames=[])
-                    network.edges[smiles_list[i - 1][0], smi]['frames']\
-                        .append(f)
+                    network.edges[prev_smiles, smi]['frames'].append(f)
 
             # If the current SMILES string is present in the network.
             else:
                 network.node[smi]['count'] += 1
-                if network.has_edge(smiles_list[i - 1], smi):
-                    network.edges[smiles_list[i - 1][0], smi]['count'] += 1
-                    network.edges[smiles_list[i - 1][0], smi]['frames']\
-                        .append(f)
+                prev_smiles = structures.loc[i - 1, 'smiles']
+                if network.has_edge(structures.loc[i - 1, 'smiles'], smi):
+                    network.edges[prev_smiles, smi]['count'] += 1
+                    network.edges[prev_smiles, smi]['frames'] .append(f)
                 else:
-                    network.add_edge(smiles_list[i - 1][0], smi, count=1,
+                    network.add_edge(prev_smiles, smi, count=1,
                                      traj_count=1, frames=[])
-                    network.edges[smiles_list[i - 1][0], smi]['frames']\
-                        .append(f)
+                    network.edges[prev_smiles, smi]['frames'].append(f)
         return network
 
     def _compile_networks(self, exclude=[]):
@@ -912,9 +920,10 @@ class Network:
 
     def _build_all_networks(self, **kwargs):
         """Builds networks for all replicas."""
+        self.get_structures()
         for rep_id, rep in enumerate(self.replica):
-            smiles_list = self.generate_SMILES(rep_id, **kwargs)
-            rep['network'] = self._build_network(smiles_list)
+            # smiles_list = self.generate_SMILES(rep_id, **kwargs)
+            rep['network'] = self._build_network(rep_id)
         return
 
     def _draw_network(self, nxgraph, filename, layout="dot", write=True,

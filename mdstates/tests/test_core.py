@@ -307,7 +307,7 @@ def test_get_BE_matrices_from_replica():
     net.add_replica(traj_path, top_path)
     net.generate_contact_matrix()
     net.decode()
-    net._build_all_networks()
+    net.build_all_networks()
 
     mats = net.get_BE_matrices_from_replica(0)
     cmat = np.array([[0, 1, 1, 1, 1, 0],
@@ -327,7 +327,7 @@ def test_get_BEMatrices():
     net.add_replica(traj_path, top_path)
     net.generate_contact_matrix()
     net.decode()
-    net._build_all_networks()
+    net.build_all_networks()
 
     mats = net.get_BEMatrices()
     cmat = np.array([[0, 1, 1, 1, 1, 0],
@@ -347,7 +347,7 @@ def test_get_reaction_operators():
     net.add_replica(traj_path, top_path)
     net.generate_contact_matrix()
     net.decode()
-    net._build_all_networks()
+    net.build_all_networks()
     ros = net.get_reaction_operators()
     for rep in ros:
         for ro in rep:

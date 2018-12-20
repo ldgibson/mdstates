@@ -28,8 +28,6 @@ void decode(int **obs, const int num_bonds, const int num_frames, float start_p[
 
 void viterbi(int *obs, const int num_frames, float start_p[2], float trans_p[2][2], float emission_p[2][2]) {
 
-    omp_set_dynamic(0);
-    omp_set_num_threads(2);
     // 2-D array of pointers
     double **V = (double **) malloc(2 * sizeof(double *));
     double **prev = (double **) malloc(2 * sizeof(double *));

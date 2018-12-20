@@ -2,21 +2,7 @@ import numpy as np
 from rdkit import Chem
 
 from ..molecules import (set_structure, estimate_bonds, build_radical_graph,
-                         set_positive_charges, molecule_to_contact_matrix,
-                         contact_matrix_to_SMILES)
-
-
-def test_contact_matrix_to_SMILES():
-    cmat = np.array([[0, 1, 1, 1, 0, 1],
-                     [0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0],
-                     [0, 0, 0, 0, 0, 0]])
-    atoms = ['C', 'H', 'H', 'H', 'Cl', 'Cl']
-    test_smi, _ = contact_matrix_to_SMILES(cmat, atoms)
-    assert test_smi == 'CCl.[Cl]'
-    return
+                         set_positive_charges, molecule_to_contact_matrix)
 
 
 def test_set_structure():
@@ -133,6 +119,7 @@ def test_set_positive_charges():
 
 def test_molecule_to_contact_matrix():
     mol = Chem.MolFromSmiles('c1ccccc1')
+    mol = Chem.AddHs(mol)
     test = molecule_to_contact_matrix(mol)
     true_atoms = np.array(['C', 'C', 'C', 'C', 'C', 'C',
                            'H', 'H', 'H', 'H', 'H', 'H'])

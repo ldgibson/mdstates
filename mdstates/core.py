@@ -16,8 +16,7 @@ from .graphs import combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .hmm_cython import decode_cpp   # , viterbi_cpp
 from .molecules import (cmat_to_structure, molecule_to_contact_matrix,
-                        molecule_to_json_string, json_string_to_molecule,
-                        contact_matrix_to_SMILES)
+                        molecule_to_json_string, json_string_to_molecule)
 from .reactionoperator import ReactionOperator
 from .smiles import (remove_consecutive_repeats, save_unique_SMILES,
                      find_reaction)
@@ -419,68 +418,6 @@ class Network:
         self._clean_frames(min_lifetime=min_lifetime)
 
         return
-
-    def generate_SMILES(self, rep_id, tol=10):
-        """Generates list of SMILES strings from trajectory.
-
-        Parameters
-        ----------
-        rep_id : int
-            Replica identifier.
-        tol : int, optional
-            Trajectory frames that are +/- `tol` frames from transition
-            frames will be converted to SMILES strings. Default is 2.
-
-        Returns
-        -------
-        smiles : list of str
-            List of SMILES strings compiled from all trajectory frames
-            within the specified tolerance of transition frames.
-        """
-
-        frames = np.array(self.frames[rep_id].copy())
-        cmat = self.replica[rep_id]['cmat']
-
-        _, first_mol = contact_matrix_to_SMILES(cmat[:, :, 0], self.atoms)
-        last_smiles, last_mol = contact_matrix_to_SMILES(cmat[:, :, -1],
-                                                         self.atoms)
-        # if not frames:
-        if frames.size == 0:
-            num_frames = cmat.shape[2]
-            if last_smiles == self.first_smiles:
-                return [(self.first_smiles, 0)]
-            else:
-                return [(self.first_smiles, 0),
-                        (last_smiles, num_frames - 1)]
-        else:
-            pass
-
-        smiles = []
-
-        for f in range(cmat.shape[2]):
-            # This bool returns `True` if the current frame `f` is at
-            # most `tol` greater than any of the values in `frames`.
-            if np.any((f - frames < tol) & (f - frames >= 0)):
-                smi, mol = contact_matrix_to_SMILES(cmat[:, :, f], self.atoms)
-                frame = find_nearest(f, frames)
-                smiles.append((smi, frame, mol))
-                # mols.append((mol, frame))
-            else:
-                pass
-
-        smiles.append((last_smiles, cmat.shape[2] - 1, last_mol))
-
-        reduced_smiles = remove_consecutive_repeats(smiles)
-
-        # if reduced_smiles[0][0] != self._first_smiles:
-        #     reduced_smiles.insert(0, (self._first_smiles, 0, first_mol))
-        if reduced_smiles[0][0] != self.first_smiles:
-            reduced_smiles.insert(0, (self.first_smiles, 0))
-        else:
-            pass
-
-        self.replica[rep_id]['smiles'] = reduced_smiles
-        return reduced_smiles
 
     def get_structures(self, tol=10):
         for rep_id in range(len(self.replica)):

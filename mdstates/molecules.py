@@ -9,32 +9,6 @@ from .reactionoperator import BEMatrix
 from .util import json_to_string, load_json_from_string
 
 
-def contact_matrix_to_SMILES(cmat, atom_list):
-    """Converts a contact matrix to a SMILES string.
-
-    Parameters
-    ----------
-    cmat : numpy.ndarray
-        Contact matrix describing connectivity in a molecule.
-    atom_list : array-like
-        Atom list with indices matching indices in contact matrix for
-        atom type identification.
-
-    Returns
-    -------
-    smiles : str
-        SMILES string of molecule built from contact matrix.
-    """
-
-    # Build the molecule
-    mol, molHs = build_molecule(cmat, atom_list)
-
-    # Generate SMILES string from molecule
-    smiles = Chem.MolToSmiles(mol)
-
-    return (smiles, molHs)
-
-
 def cmat_to_structure(cmat, atom_list):
     """Converts a contact matrix to a SMILES string and molecule.
 

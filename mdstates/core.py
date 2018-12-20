@@ -977,32 +977,35 @@ class Network:
         return topology_path
 
     def get_BEMatrices(self):
-        be_matrices = []
         for i in range(len(self.replica)):
-            # be_matrices.append([])
-            matrices = self.get_BE_matrices_from_replica(i)
-            be_matrices.append(matrices)
-        return be_matrices
+            self.get_BEMatrices_from_replica(i)
+        return
 
-    def get_BE_matrices_from_replica(self, repid):
-        be_matrices = []
+    def get_BEMatrices_from_replica(self, repid):
         if self.replica[repid]['structures'] is None:
             pass
         else:
+            df_size = len(self.replica[repid]['structures'])
+            self.replica[repid]['structures']['matrix'] = [None for _ in
+                                                           range(df_size)]
             for i, row in self.replica[repid]['structures'].iterrows():
                 mol = row['molecule']
-                smi = row['smiles']
-                be_matrices.append((molecule_to_contact_matrix(mol), smi))
-        return be_matrices
+                self.replica[repid]['structures'].loc[i, 'matrix'] =\
+                    molecule_to_contact_matrix(mol)
+        return
 
     def get_reaction_operators(self, atom_labels=None):
         reaction_operators = []
-        be_matrices = self.get_BEMatrices()
-        for replica in be_matrices:
+        self.get_BEMatrices()
+        for rep in self.replica:
             reaction_operators.append([])
-            for i, mat in enumerate(replica[:-1]):
-                reactant = mat[0]
-                product = replica[i + 1][0]
+            for i, mat in enumerate(rep['structures']['matrix'][:-1]):
+                reactant = mat
+                product = rep['structures']['matrix'][i + 1]
+
+                reactant_smiles = rep['structures'].loc[i, 'smiles']
+                product_smiles = rep['structures'].loc[i + 1, 'smiles']
+
                 if atom_labels is None:
                     pass
                 else:
@@ -1014,8 +1017,8 @@ class Network:
                 else:
                     pass
                 ro = ReactionOperator(reactant, product)
-                reaction_operators[-1].append((ro.operator, mat[1],
-                                               replica[i + 1][1]))
+                reaction_operators[-1].append((ro, reactant_smiles,
+                                               product_smiles))
         return reaction_operators
 
     def save(self, name):

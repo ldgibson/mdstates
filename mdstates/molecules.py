@@ -52,15 +52,15 @@ def cmat_to_structure(cmat, atom_list):
     """
 
     # Build the molecule
-    mol = build_molecule(cmat, atom_list)
+    mol = build_molecule(cmat, atom_list, with_hydrogens=True)
 
     # Generate SMILES string from molecule
-    smiles = Chem.MolToSmiles(mol)
+    smiles = Chem.MolToSmiles(Chem.RemoveHs(mol))
 
     return smiles, mol
 
 
-def build_molecule(cmat, atom_list):
+def build_molecule(cmat, atom_list, with_hydrogens=False):
     """Builds a molecule from a contact matrix and list of atoms.
 
     Parameters
@@ -89,9 +89,12 @@ def build_molecule(cmat, atom_list):
     estimate_bonds(mol)
     Chem.SanitizeMol(mol)
 
-    # Remove any unnecessary hydrogens.
-    mol = Chem.RemoveHs(mol)
-    return mol
+    if with_hydrogens:
+        return mol
+    else:
+        # Remove any unnecessary hydrogens.
+        mol = Chem.RemoveHs(mol)
+        return mol
 
 
 def set_structure(mol, cmat, atom_list):

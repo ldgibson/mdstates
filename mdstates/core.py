@@ -15,7 +15,8 @@ from .data import radii
 from .graphs import combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .hmm_cython import decode_cpp   # , viterbi_cpp
-from .molecules import contact_matrix_to_SMILES, cmat_to_structure
+from .molecules import (contact_matrix_to_SMILES, cmat_to_structure,
+                        molecule_to_json_string, json_string_to_molecule)
 from .smiles import (remove_consecutive_repeats, save_unique_SMILES,
                      find_reaction)
 from .util import find_nearest
@@ -513,24 +514,27 @@ class Network:
         structures = pd.DataFrame(columns=['smiles', 'molecule', 'frame',
                                            'transition_frame'])
         for f in range(cmat.shape[2]):
-            # If the current frame is within `tol` of any of the 
+            # If the current frame is within `tol` of any of the
             # transition frames in `frames`.
             if np.isclose(frames - f, 0, atol=tol).any():
                 smi, mol = cmat_to_structure(cmat[..., f], self.atoms)
                 transition_frame = find_nearest(f, frames)
-                structures = structures.append({'smiles': smi,
-                                                'molecule': mol,
-                                                'frame': f,
-                                                'transition_frame':
-                                                    transition_frame})
+                new_row = pd.DataFrame({'smiles': smi,
+                                        'molecule': mol,
+                                        'frame': f,
+                                        'transition_frame': transition_frame},
+                                       index=[0])
+                structures = structures.append(new_row, ignore_index=True)
             else:
                 pass
 
         # Adds the last structure to the end.
-        structures = structures.append({'smiles': last_smiles,
-                                        'molecule': last_mol,
-                                        'frame': num_frames - 1,
-                                        'transition_frame': num_frames - 1})
+        last_row = pd.DataFrame({'smiles': last_smiles,
+                                 'molecule': last_mol,
+                                 'frame': num_frames - 1,
+                                 'transition_frame': num_frames - 1},
+                                index=[0])
+        structures = structures.append(last_row, ignore_index=True)
 
         reduced_structures = remove_consecutive_repeats(structures)
 
@@ -565,9 +569,9 @@ class Network:
         else:
             pass
 
-        self._build_all_networks(**kwargs_to_pass)
+        self.build_all_networks(**kwargs_to_pass)
 
-        for rep in replica:
+        for rep in self.replica:
             smiles_list = rep['structures']['smiles'].tolist()
             save_unique_SMILES(smiles_list)
 
@@ -918,7 +922,7 @@ class Network:
 
         return overall_network
 
-    def _build_all_networks(self, **kwargs):
+    def build_all_networks(self, **kwargs):
         """Builds networks for all replicas."""
         self.get_structures()
         for rep_id, rep in enumerate(self.replica):
@@ -1028,18 +1032,24 @@ class Network:
         name : str
             Name of the checkpoint file.
         """
-        for i, rep in enumerate(self.replica):
-            if rep['smiles']:
-                pass
+        for rep in self.replica:
+            if rep['structures'] is None:
+                self.get_structures(tol=10)
+                break
             else:
-                rep['smiles'] = self.generate_SMILES(i, tol=10)
+                pass
 
         with open(name + '.txt', 'w') as f:
             f.write('{}\n'.format(self.first_smiles))
-            for i, rep in enumerate(self.replica):
-                f.write('replica{}\n'.format(i))
-                for smi, frame in rep['smiles']:
-                    f.write("{},{}\n".format(smi, frame))
+            for rep_id, rep in enumerate(self.replica):
+                f.write('replica{}\n'.format(rep_id))
+                for i, row in rep['structures'].iterrows():
+                    mol_graph = molecule_to_json_string(row['molecule'])
+                    smiles = row['smiles']
+                    frame = row['frame']
+                    transition_frame = row['transition_frame']
+                    f.write("{}|{}|{}|{}\n".format(frame, transition_frame,
+                                                   smiles, mol_graph))
         return
 
     def load(self, name):
@@ -1050,6 +1060,7 @@ class Network:
         name : str
             Path to the checkpoint file.
         """
+        column_names = ['frame', 'transition_frame', 'smiles', 'molecule']
         with open(name, 'r') as f:
             self.first_smiles = f.readline().strip('\n')
             for line in f.readlines():
@@ -1057,16 +1068,29 @@ class Network:
                     rep_id = int(re.search('(?<=replica)\d*', line).group(0))
                     self.replica.append({'traj': None, 'cmat': None,
                                          'path': None, 'processed': False,
-                                         'network': None, 'smiles': None,
-                                         'molecules': None})
+                                         'network': None, 'structures': None})
+                    self.replica[rep_id]['structures'] =\
+                        pd.DataFrame(columns=column_names)
                 else:
-                    data = line.strip('\n').split(',')
-                    data[1] = int(data[1])
-                    if self.replica[rep_id]['smiles']:
-                        pass
-                    else:
-                        self.replica[rep_id]['smiles'] = []
-                    self.replica[rep_id]['smiles'].append((data[0], data[1]))
+                    data = line.strip('\n').split('|')
+                    # data[1] = int(data[1])
+                    data_dict = dict((key, val) for key, val
+                                     in zip(column_names, data))
+                    df = pd.DataFrame(data_dict, index=[0])
+
+                    # Cast `frame` and `transition_frame` as integers.
+                    df['frame'] = pd.to_numeric(df['frame'],
+                                                downcast='integer')
+                    df['transition_frame'] =\
+                        pd.to_numeric(df['transition_frame'],
+                                      downcast='integer')
+                    # Convert json string back to rdkit molecule.
+                    df['molecule'] =\
+                        [json_string_to_molecule(df.loc[0, 'molecule'])]
+
+                    self.replica[-1]['structures'] =\
+                        self.replica[-1]['structures']\
+                        .append(df, ignore_index=True)
         return
 
     def build_from_load(self, filename='overall.png', exclude=[],

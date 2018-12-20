@@ -347,7 +347,7 @@ def test_save():
     net.add_replica(traj_path, top_path)
     net.generate_contact_matrix()
     net.decode()
-    net._build_all_networks()
+    net.build_all_networks()
     net.save('test')
     if os.path.exists('test.txt'):
         os.remove('test.txt')

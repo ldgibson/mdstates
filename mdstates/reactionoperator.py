@@ -64,15 +64,16 @@ class BEMatrix(np.ndarray):
     def __new__(cls, a, atoms=None):
         obj = np.asarray(a).view(cls)
         # if np.all(np.tril(obj, -1) == 0):
-            # obj = obj + np.transpose(obj, [1, 0])
+        #     obj = obj + np.transpose(obj, [1, 0])
         # else:
-            # pass
+        #     pass
 
         obj.atoms = atoms
         return obj
-    
+
     def __array_finalize__(self, obj):
-        if obj is None: return
+        if obj is None:
+            return
         self.atoms = getattr(obj, 'atoms', None)
 
     def __getitem__(self, idx):
@@ -90,14 +91,14 @@ class BEMatrix(np.ndarray):
             new_atoms = self.atoms[idx]
         new_mat = BEMatrix(new, atoms=new_atoms)
         return new_mat
-    
+
     def __setitem__(self, idx, value):
         super().__setitem__(idx, value)
-    
+
     def __delitem__(self, idx):
         raise Exception("Cannot delete items in this way. Use ",
                         "BEMatrix().delete(...) instead.")
-    
+
     def __str__(self):
         arr = self.view(np.ndarray)
         if len(arr.shape) == 1:
@@ -121,32 +122,32 @@ class BEMatrix(np.ndarray):
             if i != arr.shape[0] - 1:
                 print_string += "\n"
         return print_string
-    
+
     def __repr__(self):
         return self.__str__()
-    
+
     def __add__(self, other):
         if not isinstance(other, BEMatrix):
             raise TypeError("Both objects must be BEMatrix objects.")
         else:
             pass
-        
+
         if self.atoms == other.atoms:
             return super().__add__(other)
         else:
             raise ValueError("Both objects must have the same atom list.")
-    
+
     def __sub__(self, other):
         if not isinstance(other, BEMatrix):
             raise TypeError("Both objects must be BEMatrix objects.")
         else:
             pass
-        
+
         if self.atoms == other.atoms:
             return super().__sub__(other)
         else:
             raise ValueError("Both objects must have the same atom list.")
-    
+
     def is_equal(self, other):
         if isinstance(other, BEMatrix):
             for at1, at2 in zip(self.atoms, other.atoms):
@@ -178,7 +179,7 @@ class BEMatrix(np.ndarray):
             raise TypeError('Must pass either an int or list of int.')
         new_bematrix = BEMatrix(new, atoms=new_atoms)
         return new_bematrix
-    
+
     @property
     def atoms(self):
         return self.__atoms
@@ -216,7 +217,7 @@ class ReactionOperator:
             "Reactant array must be square."
         assert product.shape[0] == product.shape[1],\
             "Product array must be square."
-        
+
         assert product.atoms == reactant.atoms,\
             "Atom lists are not the same between reactants "
 
@@ -224,13 +225,13 @@ class ReactionOperator:
         self.operator = self._get_reaction_operator(self.reactant,
                                                     self.product)
         return
-    
+
     def __str__(self):
         return self.operator.__str__()
 
     def __repr__(self):
         return self.operator.__str__()
-    
+
     def __getitem__(self, idx):
         return self.operator[idx]
 
@@ -259,7 +260,7 @@ class ReactionOperator:
             count_dict[atom] += 1
             atoms_array[i] = atom + str(count_dict[atom])
         return atoms_array
-    
+
     def _get_reaction_operator(self, reactant, product):
         diff = product - reactant
         zero_indices = self._get_zero_columns(diff)

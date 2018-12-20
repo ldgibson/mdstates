@@ -15,8 +15,9 @@ from .data import radii
 from .graphs import combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .hmm_cython import decode_cpp   # , viterbi_cpp
-from .molecules import (cmat_to_structure, molecule_to_contact_matrix
-                        molecule_to_json_string, json_string_to_molecule)
+from .molecules import (cmat_to_structure, molecule_to_contact_matrix,
+                        molecule_to_json_string, json_string_to_molecule,
+                        contact_matrix_to_SMILES)
 from .reactionoperator import ReactionOperator
 from .smiles import (remove_consecutive_repeats, save_unique_SMILES,
                      find_reaction)

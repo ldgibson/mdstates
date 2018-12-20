@@ -62,12 +62,17 @@ class AtomList:
 
 class BEMatrix(np.ndarray):
     def __new__(cls, a, atoms=None):
+        if len(a.shape) == 2:
+            if a.shape[0] == a.shape[1]:
+                if np.all(np.tril(a, -1) == 0):
+                    a = a + np.transpose(a, [1, 0])
+                else:
+                    pass
+            else:
+                pass
+        else:
+            pass
         obj = np.asarray(a).view(cls)
-        # if np.all(np.tril(obj, -1) == 0):
-        #     obj = obj + np.transpose(obj, [1, 0])
-        # else:
-        #     pass
-
         obj.atoms = atoms
         return obj
 

@@ -236,7 +236,8 @@ def molecule_to_nxgraph(mol):
     for atom in mol.GetAtoms():
         symbol = atom.GetSymbol()
         idx = atom.GetIdx()
-        gmol.add_node(idx, symbol=symbol)
+        charge = atom.GetFormalCharge()
+        gmol.add_node(idx, symbol=symbol, charge=charge)
 
     for bond in mol.GetBonds():
         at1_id = bond.GetBeginAtom().GetIdx()
@@ -264,6 +265,7 @@ def nxgraph_to_molecule(graph):
             raise Exception("Wrong atom index assigned.")
         else:
             pass
+        mol.GetAtomWithIdx(idx).SetFormalCharge(data['charge'])
 
     for at1, at2, data in graph.edges(data=True):
         if data['bond_order'] == 1:

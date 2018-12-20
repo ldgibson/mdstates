@@ -3,6 +3,8 @@ from networkx.readwrite import json_graph
 import numpy as np
 from rdkit import Chem
 
+from .util import json_to_string, load_json_from_string
+
 
 def contact_matrix_to_SMILES(cmat, atom_list):
     """Converts a contact matrix to a SMILES string.
@@ -250,3 +252,19 @@ def nxgraph_to_json(graph):
 def json_to_nxgraph(jsgraph):
     """Converts a json-like dictionary to a networkx graph."""
     return json_graph.node_link_graph(jsgraph)
+
+
+def molecule_to_json_string(mol):
+    """Converts an rdkit molecule to a json string."""
+    graph = molecule_to_nxgraph(mol)
+    json_dict = nxgraph_to_json(graph)
+    json_string = json_to_string(json_dict)
+    return json_string
+
+
+def json_string_to_molecule(json_string):
+    """Converts a json string to an rdkit molecule."""
+    json_dict = load_json_from_string(json_string)
+    graph = json_to_nxgraph(json_dict)
+    mol = nxgraph_to_molecule(graph)
+    return mol

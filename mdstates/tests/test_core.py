@@ -302,14 +302,14 @@ def test_build_network():
     return
 
 
-def test_get_BE_matrices_from_replica():
+def test_get_BEMatrices_from_replica():
     net = Network()
     net.add_replica(traj_path, top_path)
     net.generate_contact_matrix()
     net.decode()
     net.build_all_networks()
 
-    mats = net.get_BE_matrices_from_replica(0)
+    net.get_BEMatrices_from_replica(0)
     cmat = np.array([[0, 1, 1, 1, 1, 0],
                      [1, 0, 0, 0, 0, 0],
                      [1, 0, 0, 0, 0, 0],
@@ -318,7 +318,7 @@ def test_get_BE_matrices_from_replica():
                      [0, 0, 0, 0, 0, 0]])
     atoms = np.array(['C', 'H', 'H', 'H', 'Cl', 'Cl'])
     true = BEMatrix(cmat, atoms)
-    assert np.all(mats[0][0] == true)
+    assert np.all(net.replica[0]['structures'].loc[0, 'matrix'] == true)
     return
 
 
@@ -329,7 +329,7 @@ def test_get_BEMatrices():
     net.decode()
     net.build_all_networks()
 
-    mats = net.get_BEMatrices()
+    net.get_BEMatrices()
     cmat = np.array([[0, 1, 1, 1, 1, 0],
                      [1, 0, 0, 0, 0, 0],
                      [1, 0, 0, 0, 0, 0],
@@ -338,7 +338,7 @@ def test_get_BEMatrices():
                      [0, 0, 0, 0, 0, 0]])
     atoms = np.array(['C', 'H', 'H', 'H', 'Cl', 'Cl'])
     true = BEMatrix(cmat, atoms)
-    assert np.all(mats[0][0][0] == true)
+    assert np.all(net.replica[0]['structures'].loc[0, 'matrix'] == true)
     return
 
 

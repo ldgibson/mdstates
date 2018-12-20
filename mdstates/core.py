@@ -986,11 +986,13 @@ class Network:
 
     def get_BE_matrices_from_replica(self, repid):
         be_matrices = []
-        if self.replica[repid]['smiles']:
-            for smi, f, mol in self.replica[repid]['smiles']:
-                be_matrices.append((molecule_to_contact_matrix(mol), smi))
-        else:
+        if self.replica[repid]['structures'] is None:
             pass
+        else:
+            for i, row in self.replica[repid]['structures'].iterrows():
+                mol = row['molecule']
+                smi = row['smiles']
+                be_matrices.append((molecule_to_contact_matrix(mol), smi))
         return be_matrices
 
     def get_reaction_operators(self, atom_labels=None):

@@ -318,7 +318,7 @@ def test_get_BE_matrices_from_replica():
                      [0, 0, 0, 0, 0, 0]])
     atoms = np.array(['C', 'H', 'H', 'H', 'Cl', 'Cl'])
     true = BEMatrix(cmat, atoms)
-    assert np.all(mats[0] == true)
+    assert np.all(mats[0][0] == true)
     return
 
 
@@ -338,7 +338,7 @@ def test_get_BEMatrices():
                      [0, 0, 0, 0, 0, 0]])
     atoms = np.array(['C', 'H', 'H', 'H', 'Cl', 'Cl'])
     true = BEMatrix(cmat, atoms)
-    assert np.all(mats[0][0] == true)
+    assert np.all(mats[0][0][0] == true)
     return
 
 

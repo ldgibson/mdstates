@@ -476,8 +476,11 @@ class Network:
 
     def get_structures(self, tol=10):
         for rep_id in range(len(self.replica)):
-            self.replica[rep_id]['structures'] =\
-                self.get_structures_from_replica(rep_id, tol)
+            if self.replica[rep_id]['structures'] is None:
+                self.replica[rep_id]['structures'] =\
+                    self.get_structures_from_replica(rep_id, tol)
+            else:
+                pass
         return
 
     def get_structures_from_replica(self, rep_id, tol):

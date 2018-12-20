@@ -1,10 +1,12 @@
 from collections import Counter
-import shutil
+# import shutil
 import os
 
 import mdtraj as md
 import numpy as np
 import networkx as nx
+import pandas as pd
+from rdkit import Chem
 
 from ..core import Network
 # from ..graphs import prepare_graph
@@ -202,7 +204,7 @@ def test_decode():
 
 def test_chemical_equations():
     net = Network()
-    smiles_list = [('A.B.C', 0), ('A.B.D', 10), ('A.E.D', 50)]
+    smiles_list = ['A.B.C', 'A.B.D', 'A.E.D']
 
     reactions = net.chemical_equations(-1, smiles_list)
     assert len(reactions) == 2, "List of equations not correct."
@@ -269,8 +271,6 @@ def test_get_atoms():
 
 
 def test_build_network():
-    test_list = [('C', 0), ('O', 6), ('C', 11),
-                 ('CC', 20), ('CCC', 34)]
     true_net = nx.DiGraph()
     true_net.add_node('C', count=2, traj_count=1)
     true_net.add_node('O', count=1, traj_count=1)
@@ -281,9 +281,14 @@ def test_build_network():
     true_net.add_edge('C', 'CC', count=1, traj_count=1, frames=[20])
     true_net.add_edge('CC', 'CCC', count=1, traj_count=1, frames=[34])
 
+    test_df = pd.DataFrame({'smiles': ['C', 'O', 'C', 'CC', 'CCC'],
+                            'molecule': [None for _ in range(5)],
+                            'frame': [0, 6, 11, 20, 34],
+                            'transition_frame': [0, 6, 11, 20, 34]})
     net = Network()
-    test_net = net._build_network(test_list)
-    shutil.rmtree('SMILESimages')
+    net.replica.append({'structures': test_df})
+    test_net = net._build_network(rep_id=0)
+    # shutil.rmtree('SMILESimages')
 
     for node, data in true_net.nodes(data=True):
         assert node in test_net.nodes
@@ -342,7 +347,7 @@ def test_save():
     net.add_replica(traj_path, top_path)
     net.generate_contact_matrix()
     net.decode()
-    net._build_all_networks()
+    net.build_all_networks()
     net.save('test')
     if os.path.exists('test.txt'):
         os.remove('test.txt')
@@ -352,19 +357,43 @@ def test_save():
 
 
 def test_load():
+    CF_Cl = Chem.MolFromSmiles('CF.[Cl-]')
+    CF_Cl = Chem.AddHs(CF_Cl)
+
+    CCl_F = Chem.MolFromSmiles('CCl.[F-]')
+    CCl_F = Chem.AddHs(CCl_F)
+
     net = Network()
     test_file = os.path.join(currentdir, 'test_cases', 'test_load.txt')
     net.load(test_file)
-
+    true1 = pd.DataFrame({'smiles': ['CCl.[F-]', 'CF.[Cl-]', 'CCl.[F-]'],
+                          'molecule': [CCl_F, CF_Cl, CCl_F],
+                          'frame': [1, 100, 200],
+                          'transition_frame': [1, 100, 200]})
+    true2 = pd.DataFrame({'smiles': ['CCl.[F-]', 'CF.[Cl-]', 'CCl.[F-]'],
+                          'molecule': [CCl_F, CF_Cl, CCl_F],
+                          'frame': [1, 300, 500],
+                          'transition_frame': [1, 300, 500]})
+    true_dfs = [true1, true2]
     assert len(net.replica) == 2
-    assert net.replica[0]['smiles'] == [('CCl.[F-]', 1),
-                                        ('CF.[Cl-]', 100),
-                                        ('CCl.[F-]', 200)]
-    assert net.replica[1]['smiles'] == [('CCl.[F-]', 1),
-                                        ('CF.[Cl-]', 300),
-                                        ('CCl.[F-]', 500)]
-    for rep in net.replica:
-        rep['network'] = net._build_network(rep['smiles'])
+    for rep, true_df in zip(net.replica, true_dfs):
+        assert np.all(rep['structures']['smiles'] == true_df['smiles'])
+        assert np.all(rep['structures']['transition_frame'] ==
+                      true_df['transition_frame'])
+        for rep_mol, true_mol in zip(rep['structures']['molecule'],
+                                     true_df['molecule']):
+            # Build list of atoms for both cases.
+            test_atom_list = [atom.GetSymbol() for atom in
+                              rep_mol.GetAtoms()]
+            true_atom_list = [atom.GetSymbol() for atom in
+                              true_mol.GetAtoms()]
+            # Build counters for both cases from lists.
+            test_counter = Counter(test_atom_list)
+            true_counter = Counter(true_atom_list)
+            assert test_counter == true_counter
+
+    for i, rep in enumerate(net.replica):
+        rep['network'] = net._build_network(i)
 
     # compiled = net._compile_networks()
     # net.network = compiled

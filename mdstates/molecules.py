@@ -1,6 +1,9 @@
 import networkx as nx
+from networkx.readwrite import json_graph
 import numpy as np
 from rdkit import Chem
+
+from .util import json_to_string, load_json_from_string
 
 
 def contact_matrix_to_SMILES(cmat, atom_list):
@@ -29,7 +32,35 @@ def contact_matrix_to_SMILES(cmat, atom_list):
     return smiles
 
 
-def build_molecule(cmat, atom_list):
+def cmat_to_structure(cmat, atom_list):
+    """Converts a contact matrix to a SMILES string and molecule.
+
+    Parameters
+    ----------
+    cmat : numpy.ndarray
+        Contact matrix describing connectivity in a molecule.
+    atom_list : array-like
+        Atom list with indices matching indices in contact matrix for
+        atom type identification.
+
+    Returns
+    -------
+    smiles : str
+        SMILES string of molecule built from contact matrix.
+    mol : rdkit.Chem.Mol
+        Molecule built from contact matrix.
+    """
+
+    # Build the molecule
+    mol = build_molecule(cmat, atom_list, with_hydrogens=True)
+
+    # Generate SMILES string from molecule
+    smiles = Chem.MolToSmiles(Chem.RemoveHs(mol))
+
+    return smiles, mol
+
+
+def build_molecule(cmat, atom_list, with_hydrogens=False):
     """Builds a molecule from a contact matrix and list of atoms.
 
     Parameters
@@ -58,9 +89,12 @@ def build_molecule(cmat, atom_list):
     estimate_bonds(mol)
     Chem.SanitizeMol(mol)
 
-    # Remove any unnecessary hydrogens.
-    mol = Chem.RemoveHs(mol)
-    return mol
+    if with_hydrogens:
+        return mol
+    else:
+        # Remove any unnecessary hydrogens.
+        mol = Chem.RemoveHs(mol)
+        return mol
 
 
 def set_structure(mol, cmat, atom_list):
@@ -161,3 +195,78 @@ def set_positive_charges(mol):
         else:
             pass
     return
+
+
+def molecule_to_nxgraph(mol):
+    """Converts an rdkit molecule to a networkx graph."""
+    Chem.Kekulize(mol)
+    gmol = nx.Graph()
+    for atom in mol.GetAtoms():
+        symbol = atom.GetSymbol()
+        idx = atom.GetIdx()
+        gmol.add_node(idx, symbol=symbol)
+
+    for bond in mol.GetBonds():
+        at1_id = bond.GetBeginAtom().GetIdx()
+        at2_id = bond.GetEndAtom().GetIdx()
+
+        if bond.GetBondType() == Chem.BondType.SINGLE:
+            bond_order = 1
+        elif bond.GetBondType() == Chem.BondType.DOUBLE:
+            bond_order = 2
+        elif bond.GetBondType() == Chem.BondType.TRIPLE:
+            bond_order = 3
+        else:
+            raise Exception("Bond type not recognized.")
+
+        gmol.add_edge(at1_id, at2_id, bond_order=bond_order)
+    return gmol
+
+
+def nxgraph_to_molecule(graph):
+    """Converts a networkx graph to an rdkit molecule."""
+    mol = Chem.RWMol()
+    for at, data in sorted(graph.nodes(data=True)):
+        idx = mol.AddAtom(Chem.Atom(data['symbol']))
+        if at != idx:
+            raise Exception("Wrong atom index assigned.")
+        else:
+            pass
+
+    for at1, at2, data in graph.edges(data=True):
+        if data['bond_order'] == 1:
+            bond_order = Chem.BondType.SINGLE
+        elif data['bond_order'] == 2:
+            bond_order = Chem.BondType.DOUBLE
+        elif data['bond_order'] == 3:
+            bond_order = Chem.BondType.TRIPLE
+        mol.AddBond(at1, at2, order=bond_order)
+
+    Chem.SanitizeMol(mol)
+    return mol
+
+
+def nxgraph_to_json(graph):
+    """Converts a networkx graph to a json-like dictionary."""
+    return json_graph.node_link_data(graph)
+
+
+def json_to_nxgraph(jsgraph):
+    """Converts a json-like dictionary to a networkx graph."""
+    return json_graph.node_link_graph(jsgraph)
+
+
+def molecule_to_json_string(mol):
+    """Converts an rdkit molecule to a json string."""
+    graph = molecule_to_nxgraph(mol)
+    json_dict = nxgraph_to_json(graph)
+    json_string = json_to_string(json_dict)
+    return json_string
+
+
+def json_string_to_molecule(json_string):
+    """Converts a json string to an rdkit molecule."""
+    json_dict = load_json_from_string(json_string)
+    graph = json_to_nxgraph(json_dict)
+    mol = nxgraph_to_molecule(graph)
+    return mol

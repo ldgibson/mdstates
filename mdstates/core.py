@@ -8,18 +8,31 @@ from multiprocessing import Manager, Process
 import networkx as nx
 from networkx.drawing.nx_agraph import to_agraph
 import numpy as np
+import pandas as pd
 import pybel
 
 from .data import radii
 from .graphs import combine_graphs, prepare_graph
 from .hmm import generate_ignore_list, viterbi
 from .hmm_cython import decode_cpp   # , viterbi_cpp
-from .molecules import contact_matrix_to_SMILES
+from .molecules import (contact_matrix_to_SMILES, cmat_to_structure,
+                        molecule_to_json_string, json_string_to_molecule)
 from .smiles import (remove_consecutive_repeats, save_unique_SMILES,
                      find_reaction)
 from .util import find_nearest
 
 __all__ = ['Network']
+
+
+"""TODO:
+    Separate the `replica['smiles']` values into 3 appropriate
+        quantities. Currently `replica['smiles']` holds the
+        SMILES string, the frame number, and the rdkit.RWMol
+        with added explicit hydrogens.
+    Build a new class to replace `Network.replica` attribute.
+        This object should contain all of the information about
+        the replica and should be easily indexed.
+"""
 
 
 class Network:
@@ -50,8 +63,9 @@ class Network:
         self.frames = []
         self.network = None
         self.topology = None
+        self.first_smiles = None
+        self.first_mol = None
 
-        self._first_smiles = None
         self._pairs = []
         self._cutoff = {}
         return
@@ -92,11 +106,11 @@ class Network:
             for _ in range(len(trajectory)):
                 self.replica.append({'traj': None, 'cmat': None, 'path': None,
                                      'processed': False, 'network': None,
-                                     'smiles': None})
+                                     'structures': None})
         else:
             self.replica.append({'traj': None, 'cmat': None, 'path': None,
                                  'processed': False, 'network': None,
-                                 'smiles': None})
+                                 'structures': None})
         if topology:
             pass
         else:
@@ -217,7 +231,7 @@ class Network:
             pass
 
         # Check if topology file has been converted to a SMILES string.
-        if self._first_smiles:
+        if self.first_smiles:
             pass
         else:
             self._traj_to_smiles()
@@ -408,7 +422,7 @@ class Network:
 
         return
 
-    def _generate_SMILES(self, rep_id, tol=10):
+    def generate_SMILES(self, rep_id, tol=10):
         """Generates list of SMILES strings from trajectory.
 
         Parameters
@@ -433,10 +447,10 @@ class Network:
         if frames.size == 0:
             num_frames = cmat.shape[2]
             last_smiles = contact_matrix_to_SMILES(cmat[:, :, -1], self.atoms)
-            if last_smiles == self._first_smiles:
-                return [(self._first_smiles, 0)]
+            if last_smiles == self.first_smiles:
+                return [(self.first_smiles, 0)]
             else:
-                return [(self._first_smiles, 0),
+                return [(self.first_smiles, 0),
                         (last_smiles, num_frames - 1)]
         else:
             pass
@@ -456,13 +470,82 @@ class Network:
 
         reduced_smiles = remove_consecutive_repeats(smiles)
 
-        if reduced_smiles[0][0] != self._first_smiles:
-            reduced_smiles.insert(0, (self._first_smiles, 0))
+        if reduced_smiles[0][0] != self.first_smiles:
+            reduced_smiles.insert(0, (self.first_smiles, 0))
         else:
             pass
 
         self.replica[rep_id]['smiles'] = reduced_smiles
         return reduced_smiles
+
+    def get_structures(self, tol=10):
+        for rep_id in range(len(self.replica)):
+            self.replica[rep_id]['structures'] =\
+                self.get_structures_from_replica(rep_id, tol)
+        return
+
+    def get_structures_from_replica(self, rep_id, tol):
+        frames = np.array(self.frames[rep_id])
+        cmat = self.replica[rep_id]['cmat']
+
+        last_smiles, last_mol = cmat_to_structure(cmat[:, :, -1],
+                                                  self.atoms)
+        num_frames = cmat.shape[2]
+        # Handles if there are no recorded transitions.
+        if frames.size == 0:
+            # If the structure has not changed.
+            if last_smiles == self.first_smiles:
+                return pd.DataFrame({'smiles': [self.first_smiles],
+                                     'molecule': [self.first_mol],
+                                     'frame': [0],
+                                     'transition_frame': [0]})
+            # If a transition happend so early that
+            # it was never detected and recorded.
+            else:
+                return pd.DataFrame({'smiles': [self.first_smiles,
+                                                last_smiles],
+                                     'molecule': [self.first_mol,
+                                                  last_mol],
+                                     'frame': [0, num_frames - 1],
+                                     'transition_frame': [0, 0]})
+        else:
+            pass
+
+        structures = pd.DataFrame(columns=['smiles', 'molecule', 'frame',
+                                           'transition_frame'])
+        for f in range(cmat.shape[2]):
+            # If the current frame is within `tol` of any of the
+            # transition frames in `frames`.
+            if np.isclose(frames - f, 0, atol=tol).any():
+                smi, mol = cmat_to_structure(cmat[..., f], self.atoms)
+                transition_frame = find_nearest(f, frames)
+                new_row = pd.DataFrame({'smiles': smi,
+                                        'molecule': mol,
+                                        'frame': f,
+                                        'transition_frame': transition_frame},
+                                       index=[0])
+                structures = structures.append(new_row, ignore_index=True)
+            else:
+                pass
+
+        # Adds the last structure to the end.
+        last_row = pd.DataFrame({'smiles': last_smiles,
+                                 'molecule': last_mol,
+                                 'frame': num_frames - 1,
+                                 'transition_frame': num_frames - 1},
+                                index=[0])
+        structures = structures.append(last_row, ignore_index=True)
+
+        reduced_structures = remove_consecutive_repeats(structures)
+
+        if reduced_structures.loc[0, 'smiles'] != self.first_smiles:
+            first_row = pd.DataFrame({'smiles': [self.first_smiles],
+                                      'molecule': [self.first_mol],
+                                      'frame': [0],
+                                      'transition_frame': [0]})
+            reduced_structures = pd.concat([first_row, reduced_structures],
+                                           ignore_index=True)
+        return reduced_structures
 
     def draw_overall_network(self, filename='overall.png', exclude=[],
                              SMILES_loc='SMILESimages', use_LR=False,
@@ -486,16 +569,20 @@ class Network:
         else:
             pass
 
-        self._build_all_networks(**kwargs_to_pass)
+        self.build_all_networks(**kwargs_to_pass)
+
+        for rep in self.replica:
+            smiles_list = rep['structures']['smiles'].tolist()
+            save_unique_SMILES(smiles_list)
 
         # print("Saving SMILES images to: {}".format(abspath(SMILES_loc)))
         compiled = self._compile_networks(exclude=exclude)
         self.network = compiled
-        final = prepare_graph(compiled, root_node=self._first_smiles, **kwargs)
+        final = prepare_graph(compiled, root_node=self.first_smiles, **kwargs)
 
         # Remove all nodes that are beyond a threshold tree depth.
         if tree_depth:
-            lengths = nx.shortest_path_length(final, source=self._first_smiles)
+            lengths = nx.shortest_path_length(final, source=self.first_smiles)
             for node in lengths:
                 if lengths[node] > tree_depth:
                     final.remove_node(node)
@@ -531,14 +618,15 @@ class Network:
         if rep_id == -1 and args:
             smiles_list = args[0]
         else:
-            assert self.replica[rep_id]['smiles'], "SMILES list is empty."
-            smiles_list = self.replica[rep_id]['smiles']
+            assert self.replica[rep_id]['structures'],\
+                "Structures list is empty."
+            smiles_list = self.replica[rep_id]['structures']['smiles'].tolist()
 
         chem_eq_list = []
-        for i, (smi, _) in enumerate(smiles_list):
+        for i, smi in enumerate(smiles_list):
             if i == 0:
                 continue
-            chem_eq_list.append(find_reaction(smiles_list[i - 1][0], smi))
+            chem_eq_list.append(find_reaction(smiles_list[i - 1], smi))
 
         return chem_eq_list
 
@@ -614,7 +702,7 @@ class Network:
         array([[0, 1, 2],
                [0, 0, 3],
                [0, 0, 0]])
-        >>> bar[:, :, 0]  # second frame
+        >>> bar[:, :, 1]  # second frame
         array([[0, 4, 5],
                [0, 0, 6],
                [0, 0, 0]])
@@ -763,7 +851,7 @@ class Network:
             self.frames[rep_id] = list(trans_frames)
         return
 
-    def _build_network(self, smiles_list):
+    def _build_network(self, rep_id):
         """Builds the network from a list of SMILES strings.
 
         Parameters
@@ -771,19 +859,19 @@ class Network:
         smiles_list : list of tuple of str and int
             List of tuples containing the SMILES string and the nearest
             transition frame.
-        image_loc : str, optional
-            Location of the folder containing all 2D SMILES structures.
 
         Returns
         -------
         network : networkx.DiGraph
         """
 
-        save_unique_SMILES([smi for smi, _ in smiles_list])
-
         network = nx.DiGraph()
 
-        for i, (smi, f) in enumerate(smiles_list):
+        structures = self.replica[rep_id]['structures']
+
+        for i, row in structures.iterrows():
+            smi = row['smiles']
+            f = row['transition_frame']
             # If the current SMILES string is missing in the network
             # graph, then add it.
             if not network.has_node(smi):
@@ -792,23 +880,22 @@ class Network:
                     network.add_node(smi, count=1, traj_count=1)
                 else:
                     network.add_node(smi, count=1, traj_count=1)
-                    network.add_edge(smiles_list[i - 1][0], smi, count=1,
+                    prev_smiles = structures.loc[i - 1, 'smiles']
+                    network.add_edge(prev_smiles, smi, count=1,
                                      traj_count=1, frames=[])
-                    network.edges[smiles_list[i - 1][0], smi]['frames']\
-                        .append(f)
+                    network.edges[prev_smiles, smi]['frames'].append(f)
 
             # If the current SMILES string is present in the network.
             else:
                 network.node[smi]['count'] += 1
-                if network.has_edge(smiles_list[i - 1], smi):
-                    network.edges[smiles_list[i - 1][0], smi]['count'] += 1
-                    network.edges[smiles_list[i - 1][0], smi]['frames']\
-                        .append(f)
+                prev_smiles = structures.loc[i - 1, 'smiles']
+                if network.has_edge(structures.loc[i - 1, 'smiles'], smi):
+                    network.edges[prev_smiles, smi]['count'] += 1
+                    network.edges[prev_smiles, smi]['frames'] .append(f)
                 else:
-                    network.add_edge(smiles_list[i - 1][0], smi, count=1,
+                    network.add_edge(prev_smiles, smi, count=1,
                                      traj_count=1, frames=[])
-                    network.edges[smiles_list[i - 1][0], smi]['frames']\
-                        .append(f)
+                    network.edges[prev_smiles, smi]['frames'].append(f)
         return network
 
     def _compile_networks(self, exclude=[]):
@@ -835,16 +922,12 @@ class Network:
 
         return overall_network
 
-    def _build_all_networks(self, **kwargs):
+    def build_all_networks(self, **kwargs):
         """Builds networks for all replicas."""
+        self.get_structures()
         for rep_id, rep in enumerate(self.replica):
-            smiles_list = self._generate_SMILES(rep_id, **kwargs)
-            rep['network'] = self._build_network(smiles_list)
-            # if not rep['network']:
-            #     smiles_list = self.generate_SMILES(rep_id, min_lifetime)
-            #     rep['network'] = self._build_network(smiles_list)
-            # else:
-            #     pass
+            # smiles_list = self.generate_SMILES(rep_id, **kwargs)
+            rep['network'] = self._build_network(rep_id)
         return
 
     def _draw_network(self, nxgraph, filename, layout="dot", write=True,
@@ -856,7 +939,7 @@ class Network:
         else:
             pass
 
-        pygraph.add_subgraph([self._first_smiles], rank='source')
+        pygraph.add_subgraph([self.first_smiles], rank='source')
         pygraph.layout(layout)
         if write:
             pygraph.write("input.dot")
@@ -870,9 +953,9 @@ class Network:
         """Draw with Python Graphviz instead of PyGraphviz."""
         from graphviz import Digraph
         g = Digraph('G', filename='graph.gv', format=format)
-        # self._first_smiles = 'O=C1OCCO1.O=C1OCCO1.[Li]'
+        # self.first_smiles = 'O=C1OCCO1.O=C1OCCO1.[Li]'
         for n, data in overall.nodes(data=True):
-            if n == self._first_smiles:
+            if n == self.first_smiles:
                 with g.subgraph(name='top') as top:
                     top.graph_attr.update(rank='source')
                     top.node(n, image=data['image'])
@@ -919,8 +1002,8 @@ class Network:
                                          self._pairs, periodic=self.pbc)
         distances = self._reshape_to_square(distances)
         cmat = self._build_connections(distances)
-        self._first_smiles = contact_matrix_to_SMILES(cmat[..., 0],
-                                                      self.atoms)
+        self.first_smiles, self.first_mol = cmat_to_structure(cmat[..., 0],
+                                                              self.atoms)
         return
 
     def _traj_to_topology(self, traj, format='xyz'):
@@ -949,18 +1032,24 @@ class Network:
         name : str
             Name of the checkpoint file.
         """
-        for i, rep in enumerate(self.replica):
-            if rep['smiles']:
-                pass
+        for rep in self.replica:
+            if rep['structures'] is None:
+                self.get_structures(tol=10)
+                break
             else:
-                rep['smiles'] = self._generate_SMILES(i, tol=10)
+                pass
 
         with open(name + '.txt', 'w') as f:
-            f.write('{}\n'.format(self._first_smiles))
-            for i, rep in enumerate(self.replica):
-                f.write('replica{}\n'.format(i))
-                for smi, frame in rep['smiles']:
-                    f.write("{},{}\n".format(smi, frame))
+            f.write('{}\n'.format(self.first_smiles))
+            for rep_id, rep in enumerate(self.replica):
+                f.write('replica{}\n'.format(rep_id))
+                for i, row in rep['structures'].iterrows():
+                    mol_graph = molecule_to_json_string(row['molecule'])
+                    smiles = row['smiles']
+                    frame = row['frame']
+                    transition_frame = row['transition_frame']
+                    f.write("{}|{}|{}|{}\n".format(frame, transition_frame,
+                                                   smiles, mol_graph))
         return
 
     def load(self, name):
@@ -971,22 +1060,37 @@ class Network:
         name : str
             Path to the checkpoint file.
         """
+        column_names = ['frame', 'transition_frame', 'smiles', 'molecule']
         with open(name, 'r') as f:
-            self._first_smiles = f.readline().strip('\n')
+            self.first_smiles = f.readline().strip('\n')
             for line in f.readlines():
                 if line.startswith('replica'):
                     rep_id = int(re.search('(?<=replica)\d*', line).group(0))
                     self.replica.append({'traj': None, 'cmat': None,
                                          'path': None, 'processed': False,
-                                         'network': None, 'smiles': None})
+                                         'network': None, 'structures': None})
+                    self.replica[rep_id]['structures'] =\
+                        pd.DataFrame(columns=column_names)
                 else:
-                    data = line.strip('\n').split(',')
-                    data[1] = int(data[1])
-                    if self.replica[rep_id]['smiles']:
-                        pass
-                    else:
-                        self.replica[rep_id]['smiles'] = []
-                    self.replica[rep_id]['smiles'].append((data[0], data[1]))
+                    data = line.strip('\n').split('|')
+                    # data[1] = int(data[1])
+                    data_dict = dict((key, val) for key, val
+                                     in zip(column_names, data))
+                    df = pd.DataFrame(data_dict, index=[0])
+
+                    # Cast `frame` and `transition_frame` as integers.
+                    df['frame'] = pd.to_numeric(df['frame'],
+                                                downcast='integer')
+                    df['transition_frame'] =\
+                        pd.to_numeric(df['transition_frame'],
+                                      downcast='integer')
+                    # Convert json string back to rdkit molecule.
+                    df['molecule'] =\
+                        [json_string_to_molecule(df.loc[0, 'molecule'])]
+
+                    self.replica[-1]['structures'] =\
+                        self.replica[-1]['structures']\
+                        .append(df, ignore_index=True)
         return
 
     def build_from_load(self, filename='overall.png', exclude=[],
@@ -998,11 +1102,11 @@ class Network:
 
         compiled = self._compile_networks(exclude=exclude)
         self.network = compiled
-        final = prepare_graph(compiled, root_node=self._first_smiles, **kwargs)
+        final = prepare_graph(compiled, root_node=self.first_smiles, **kwargs)
 
         # Remove all nodes that are beyond a threshold tree depth.
         if tree_depth:
-            lengths = nx.shortest_path_length(final, source=self._first_smiles)
+            lengths = nx.shortest_path_length(final, source=self.first_smiles)
             for node in lengths:
                 if lengths[node] > tree_depth:
                     final.remove_node(node)

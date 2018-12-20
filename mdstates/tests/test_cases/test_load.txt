@@ -1,9 +1,9 @@
 CCl.[F-]
 replica0
-CCl.[F-],1
-CF.[Cl-],100
-CCl.[F-],200
+1|1|CCl.[F-]|{"directed": false, "multigraph": false, "graph": {}, "nodes": [{"symbol": "C", "id": 0}, {"symbol": "Cl", "id": 1}, {"symbol": "F", "id": 2}, {"symbol": "H", "id": 3}, {"symbol": "H", "id": 4}, {"symbol": "H", "id": 5}], "links": [{"bond_order": 1, "source": 0, "target": 1}, {"bond_order": 1, "source": 0, "target": 3}, {"bond_order": 1, "source": 0, "target": 4}, {"bond_order": 1, "source": 0, "target": 5}]}
+100|100|CF.[Cl-]|{"directed": false, "multigraph": false, "graph": {}, "nodes": [{"symbol": "C", "id": 0}, {"symbol": "F", "id": 1}, {"symbol": "Cl", "id": 2}, {"symbol": "H", "id": 3}, {"symbol": "H", "id": 4}, {"symbol": "H", "id": 5}], "links": [{"bond_order": 1, "source": 0, "target": 1}, {"bond_order": 1, "source": 0, "target": 3}, {"bond_order": 1, "source": 0, "target": 4}, {"bond_order": 1, "source": 0, "target": 5}]}
+200|200|CCl.[F-]|{"directed": false, "multigraph": false, "graph": {}, "nodes": [{"symbol": "C", "id": 0}, {"symbol": "Cl", "id": 1}, {"symbol": "F", "id": 2}, {"symbol": "H", "id": 3}, {"symbol": "H", "id": 4}, {"symbol": "H", "id": 5}], "links": [{"bond_order": 1, "source": 0, "target": 1}, {"bond_order": 1, "source": 0, "target": 3}, {"bond_order": 1, "source": 0, "target": 4}, {"bond_order": 1, "source": 0, "target": 5}]}
 replica1
-CCl.[F-],1
-CF.[Cl-],300
-CCl.[F-],500
+1|1|CCl.[F-]|{"directed": false, "multigraph": false, "graph": {}, "nodes": [{"symbol": "C", "id": 0}, {"symbol": "Cl", "id": 1}, {"symbol": "F", "id": 2}, {"symbol": "H", "id": 3}, {"symbol": "H", "id": 4}, {"symbol": "H", "id": 5}], "links": [{"bond_order": 1, "source": 0, "target": 1}, {"bond_order": 1, "source": 0, "target": 3}, {"bond_order": 1, "source": 0, "target": 4}, {"bond_order": 1, "source": 0, "target": 5}]}
+300|300|CF.[Cl-]|{"directed": false, "multigraph": false, "graph": {}, "nodes": [{"symbol": "C", "id": 0}, {"symbol": "F", "id": 1}, {"symbol": "Cl", "id": 2}, {"symbol": "H", "id": 3}, {"symbol": "H", "id": 4}, {"symbol": "H", "id": 5}], "links": [{"bond_order": 1, "source": 0, "target": 1}, {"bond_order": 1, "source": 0, "target": 3}, {"bond_order": 1, "source": 0, "target": 4}, {"bond_order": 1, "source": 0, "target": 5}]}
+500|500|CCl.[F-]|{"directed": false, "multigraph": false, "graph": {}, "nodes": [{"symbol": "C", "id": 0}, {"symbol": "Cl", "id": 1}, {"symbol": "F", "id": 2}, {"symbol": "H", "id": 3}, {"symbol": "H", "id": 4}, {"symbol": "H", "id": 5}], "links": [{"bond_order": 1, "source": 0, "target": 1}, {"bond_order": 1, "source": 0, "target": 3}, {"bond_order": 1, "source": 0, "target": 4}, {"bond_order": 1, "source": 0, "target": 5}]}

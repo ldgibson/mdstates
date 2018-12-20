@@ -1,6 +1,6 @@
 from numbers import Number
 from itertools import combinations
-import re
+# import re
 from os.path import abspath, dirname, join
 
 import mdtraj as md
@@ -25,10 +25,6 @@ __all__ = ['Network']
 
 
 """TODO:
-    Separate the `replica['smiles']` values into 3 appropriate
-        quantities. Currently `replica['smiles']` holds the
-        SMILES string, the frame number, and the rdkit.RWMol
-        with added explicit hydrogens.
     Build a new class to replace `Network.replica` attribute.
         This object should contain all of the information about
         the replica and should be easily indexed.
@@ -1065,15 +1061,14 @@ class Network:
             self.first_smiles = f.readline().strip('\n')
             for line in f.readlines():
                 if line.startswith('replica'):
-                    rep_id = int(re.search('(?<=replica)\d*', line).group(0))
+                    # rep_id = int(re.search('(?<=replica)\d*', line).group(0))
                     self.replica.append({'traj': None, 'cmat': None,
                                          'path': None, 'processed': False,
                                          'network': None, 'structures': None})
-                    self.replica[rep_id]['structures'] =\
+                    self.replica[-1]['structures'] =\
                         pd.DataFrame(columns=column_names)
                 else:
                     data = line.strip('\n').split('|')
-                    # data[1] = int(data[1])
                     data_dict = dict((key, val) for key, val
                                      in zip(column_names, data))
                     df = pd.DataFrame(data_dict, index=[0])

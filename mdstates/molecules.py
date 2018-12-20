@@ -196,14 +196,15 @@ def set_positive_charges(mol):
 
 def molecule_to_nxgraph(mol):
     """Converts an rdkit molecule to a networkx graph."""
-    mol = Chem.AddHs(mol)
     Chem.Kekulize(mol)
     gmol = nx.Graph()
-    for bond in mol.GetBonds():
-        at1 = bond.GetBeginAtom().GetSymbol()
-        at1_id = bond.GetBeginAtom().GetIdx()
+    for atom in mol.GetAtoms():
+        symbol = atom.GetSymbol()
+        idx = atom.GetIdx()
+        gmol.add_node(idx, symbol=symbol)
 
-        at2 = bond.GetEndAtom().GetSymbol()
+    for bond in mol.GetBonds():
+        at1_id = bond.GetBeginAtom().GetIdx()
         at2_id = bond.GetEndAtom().GetIdx()
 
         if bond.GetBondType() == Chem.BondType.SINGLE:
@@ -215,8 +216,6 @@ def molecule_to_nxgraph(mol):
         else:
             raise Exception("Bond type not recognized.")
 
-        gmol.add_node(at1_id, symbol=at1)
-        gmol.add_node(at2_id, symbol=at2)
         gmol.add_edge(at1_id, at2_id, bond_order=bond_order)
     return gmol
 

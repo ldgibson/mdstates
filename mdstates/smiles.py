@@ -2,6 +2,7 @@ from itertools import groupby
 import shutil
 import os.path
 
+import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.Draw import DrawingOptions
@@ -151,19 +152,19 @@ def remove_consecutive_repeats(smiles):
     true_list : list
         List with all consecutive repeats removed.
     """
-    true_list = []
-    ref = smiles[0][0]
-    true_list.append(smiles[0])
+    reduced = pd.DataFrame(columns=['smiles', 'molecule', 'frame',
+                                    'transition_frame'])
+    ref = smiles.loc[0, 'smiles']
+    reduced = reduced.append(smiles.iloc[0], ignore_index=True)
 
-    for i, smi in enumerate(smiles):
+    for i, row in smiles.iterrows():
         if i == 0:
             continue
 
-        if smi[0] != ref:
-            true_list.append(smi)
-            ref = smi[0]
-
-    return true_list
+        if row['smiles'] != ref:
+            reduced = reduced.append(row, ignore_index=True)
+            ref = row['smiles']
+    return reduced
 
 
 def uniqueSMILES(smiles_list):

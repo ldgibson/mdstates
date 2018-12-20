@@ -1,8 +1,36 @@
+import json
+import os.path
 from os.path import abspath, dirname, join
 from numbers import Number
 
 import numpy as np
 import pandas as pd
+
+
+def json_to_string(json_dict):
+    return json.dumps(json_dict)
+
+
+def json_to_file(json_dict, filename):
+    with open(filename, 'w') as f:
+        json.dump(json_dict, f)
+    return
+
+
+def load_json_from_file(filename):
+    if os.path.exists(filename):
+        pass
+    else:
+        raise FileNotFoundError("File not found: {}".format(filename))
+
+    with open(filename, 'r') as f:
+        json_dict = json.load(f)
+    return json_dict
+
+
+def load_json_from_string(json_string):
+    json_dict = json.loads(json_string)
+    return json_dict
 
 
 def getpath(filename):

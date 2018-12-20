@@ -1,5 +1,8 @@
 from collections import Counter
 
+import numpy as np
+import pandas as pd
+
 from ..smiles import (get_mol_dict, remove_common_molecules,
                       to_chemical_equation, find_reaction,
                       remove_consecutive_repeats, uniqueSMILES)
@@ -88,10 +91,19 @@ def test_find_reaction():
 
 def test_remove_consecutive_repeats():
     test_list = ['a', 'a', 'a', 'b', 'c', 'c', 'a']
-
     true_after = ['a', 'b', 'c', 'a']
-    test_after = remove_consecutive_repeats(test_list)
-    assert true_after == test_after, "Lists not the same."
+    test_df = pd.DataFrame({'smiles': test_list,
+                            'molecule': test_list,
+                            'frame': list(range(len(test_list))),
+                            'transition_frame': list(range(len(test_list)))})
+    true_df_after = pd.DataFrame({'smiles': true_after,
+                                  'molecule': true_after,
+                                  'frame': [0, 3, 4, 6],
+                                  'transition_frame': [0, 3, 4, 6]})
+    test_df_after = remove_consecutive_repeats(test_df)
+    for col in test_df_after:
+        assert np.all(true_df_after[col] == test_df_after[col]),\
+            "Lists not the same."
     return
 
 

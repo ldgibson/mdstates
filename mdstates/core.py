@@ -875,7 +875,7 @@ class Network:
         if tree_depth:
             for rep in self.replica:
                 lengths = nx.shortest_path_length(rep['network'],
-                                                  source=self._first_smiles)
+                                                  source=self.first_smiles)
                 for node in lengths:
                     if lengths[node] > tree_depth:
                         rep['network'].remove_node(node)

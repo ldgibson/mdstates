@@ -73,6 +73,11 @@ class BEMatrix(np.ndarray):
         else:
             pass
         obj = np.asarray(a).view(cls)
+        # if atoms is None:
+        #     pass
+        # else:
+        #     assert len(obj) == len(atoms),\
+        #         "Atom list and matrix shape do not match."
         obj.atoms = atoms
         return obj
 

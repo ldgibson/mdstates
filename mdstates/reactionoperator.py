@@ -136,6 +136,9 @@ class BEMatrix(np.ndarray):
     def __repr__(self):
         return self.__str__()
 
+    def __hash__(self):
+        return hash(repr(self))
+
     def __add__(self, other):
         if not isinstance(other, BEMatrix):
             raise TypeError("Both objects must be BEMatrix objects.")

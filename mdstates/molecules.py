@@ -192,7 +192,7 @@ def molecule_to_contact_matrix(mol):
 
     # mol = Chem.AddHs(mol)
     Chem.Kekulize(mol)
-    dim = mol.GetNumAtoms(onlyExplicit=False)
+    dim = mol.GetNumAtoms()
     cmat = np.zeros((dim, dim), dtype=np.int32)
     atom_list = np.empty(dim, dtype='U8')
     for atom in mol.GetAtoms():

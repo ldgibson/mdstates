@@ -98,7 +98,11 @@ class BEMatrix(np.ndarray):
             else:
                 raise TypeError("Must passing proper index values.")
         else:
-            new_atoms = self.atoms[idx]
+            new_atoms = [self.atoms[idx]]
+        if isinstance(idx, int):
+            new = new.reshape(1, -1)
+        else:
+            pass
         new_mat = BEMatrix(new, atoms=new_atoms)
         return new_mat
 
@@ -160,6 +164,12 @@ class BEMatrix(np.ndarray):
             return super().__sub__(other)
         else:
             raise ValueError("Both objects must have the same atom list.")
+
+    def __eq__(self, other):
+        return np.all(super().__eq__(other))
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def is_equal(self, other):
         if isinstance(other, BEMatrix):

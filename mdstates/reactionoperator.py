@@ -174,11 +174,11 @@ class BEMatrix(np.ndarray):
     def is_equal(self, other):
         if isinstance(other, BEMatrix):
             for at1, at2 in zip(self.atoms, other.atoms):
-                if re.search("\d", at1):
+                if re.search("\d", at1):  # noqa
                     atom1 = re.search("[a-zA-Z]*", at1).group(0)
                 else:
                     atom1 = at1
-                if re.search("\d", at2):
+                if re.search("\d", at2):  # noqa
                     atom2 = re.search("[a-zA-Z]*", at2).group(0)
                 else:
                     atom2 = at2

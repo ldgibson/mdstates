@@ -840,6 +840,17 @@ class Network:
                     network.add_edge(prev_smiles, smi, count=1,
                                      traj_count=1, frames=[])
                     network.edges[prev_smiles, smi]['frames'].append(f)
+
+            # Add the node then record its distance from head node.
+            structures.loc[i, 'depth'] =\
+                nx.shortest_path_length(network,
+                                        source=self.first_smiles,
+                                        target=smi)
+        for smi in set(structures['smiles']):
+            minimum = structures.loc[structures['smiles'] == smi,
+                                     'depth'].min()
+            structures.loc[(structures['smiles'] == smi) &
+                           (structures['depth'] > minimum), 'depth'] = minimum
         return network
 
     def _compile_networks(self, exclude=[]):
@@ -976,12 +987,12 @@ class Network:
         mol.write('pdb', topology_path, overwrite=True)
         return topology_path
 
-    def get_BEMatrices(self):
+    def get_BEMatrices(self, atom_labels=None):
         for i in range(len(self.replica)):
-            self.get_BEMatrices_from_replica(i)
+            self.get_BEMatrices_from_replica(i, atom_labels)
         return
 
-    def get_BEMatrices_from_replica(self, repid):
+    def get_BEMatrices_from_replica(self, repid, atom_labels):
         if self.replica[repid]['structures'] is None:
             pass
         else:
@@ -990,27 +1001,40 @@ class Network:
                                                            range(df_size)]
             for i, row in self.replica[repid]['structures'].iterrows():
                 mol = row['molecule']
-                self.replica[repid]['structures'].loc[i, 'matrix'] =\
-                    molecule_to_contact_matrix(mol)
+                self.replica[repid]['structures'].at[i, 'matrix'] =\
+                    molecule_to_contact_matrix(mol, atom_labels)
         return
 
-    def get_reaction_operators(self, atom_labels=None):
+    def get_reaction_operators(self, atom_labels=None, depth=None):
+        if depth is None:
+            depth = 0
+        else:
+            pass
         reaction_operators = []
-        self.get_BEMatrices()
+        self.get_BEMatrices(atom_labels)
         for rep in self.replica:
             reaction_operators.append([])
-            for i, mat in enumerate(rep['structures']['matrix'][:-1]):
-                reactant = mat
+            for i, row in rep['structures'].iloc[:-1].iterrows():
+                if 'depth' in rep['structures'].columns:
+                    if row['depth'] > depth\
+                            or rep['structures'].loc[i + 1, 'depth'] > depth:
+                        continue
+                else:
+                    pass
+                # for i, mat in enumerate(rep['structures']['matrix'][:-1]):
+                # reactant = mat
+                reactant = row['matrix']
                 product = rep['structures']['matrix'][i + 1]
 
-                reactant_smiles = rep['structures'].loc[i, 'smiles']
+                # reactant_smiles = rep['structures'].loc[i, 'smiles']
+                reactant_smiles = row['smiles']
                 product_smiles = rep['structures'].loc[i + 1, 'smiles']
 
-                if atom_labels is None:
-                    pass
-                else:
-                    reactant.atoms = atom_labels
-                    product.atoms = atom_labels
+                # if atom_labels is None:
+                # pass
+                # else:
+                # reactant.atoms = atom_labels
+                # product.atoms = atom_labels
 
                 if np.all(reactant == product):
                     continue

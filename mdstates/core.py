@@ -931,6 +931,11 @@ class Network:
 
     def _draw_network(self, nxgraph, filename, layout="dot", write=True,
                       use_LR=False):
+        try:
+            import pygraphviz
+        except(ModuleNotFoundError):
+            raise ModuleNotFoundError("pygraphviz not installed.")
+
         pygraph = to_agraph(nxgraph)
 
         if use_LR:
@@ -950,7 +955,10 @@ class Network:
     def _draw_network_with_graphviz(self, overall, filename="overall",
                                     format='png'):
         """Draw with Python Graphviz instead of PyGraphviz."""
-        from graphviz import Digraph
+        try:
+            from graphviz import Digraph
+        except(ModuleNotFoundError):
+            raise ModuleNotFoundError("graphviz not installed.")
         g = Digraph('G', filename='graph.gv', format=format)
         # self.first_smiles = 'O=C1OCCO1.O=C1OCCO1.[Li]'
         for n, data in overall.nodes(data=True):

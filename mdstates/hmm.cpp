@@ -1,19 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cmath>
-#include <sys/time.h>
-#include <time.h>
 #include <vector>
 #include <omp.h>
 #include "hmm.h"
-
-
-double my_timer() {
-    struct timeval tv;
-    struct timezone tz;
-    gettimeofday(&tv, &tz);
-    return ((double)tv.tv_sec + (double)0.000001 * (double)tv.tv_usec);
-}
 
 
 void decode(int **obs, const int num_bonds, const int num_frames, float start_p[2], float trans_p[2][2], float emission_p[2][2], int cores) {

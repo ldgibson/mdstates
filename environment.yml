@@ -1,4 +1,4 @@
-name: mdstates
+name: mdstates-gv
 channels:
   - rdkit
   - conda-forge
@@ -10,9 +10,9 @@ dependencies:
   - pandas
   - numpy
   - rdkit
-  - pygraphviz
   - mdtraj
   - openbabel
+  - aggdraw
   - pip
   - pip:
-      - aggdraw
+      - graphviz

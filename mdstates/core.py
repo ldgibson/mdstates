@@ -932,7 +932,7 @@ class Network:
     def _draw_network(self, nxgraph, filename, layout="dot", write=True,
                       use_LR=False):
         try:
-            import pygraphviz
+            import pygraphviz  # noqa
         except(ModuleNotFoundError):
             raise ModuleNotFoundError("pygraphviz not installed.")
 

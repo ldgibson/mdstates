@@ -309,7 +309,7 @@ def test_get_BEMatrices_from_replica():
     net.decode()
     net.build_all_networks()
 
-    net.get_BEMatrices_from_replica(0)
+    net.get_BEMatrices_from_replica(0, None)
     cmat = np.array([[0, 1, 1, 1, 1, 0],
                      [1, 0, 0, 0, 0, 0],
                      [1, 0, 0, 0, 0, 0],

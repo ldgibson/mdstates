@@ -840,6 +840,17 @@ class Network:
                     network.add_edge(prev_smiles, smi, count=1,
                                      traj_count=1, frames=[])
                     network.edges[prev_smiles, smi]['frames'].append(f)
+
+            # Add the node then record its distance from head node.
+            structures.loc[i, 'depth'] =\
+                nx.shortest_path_length(network,
+                                        source=self.first_smiles,
+                                        target=smi)
+        for smi in set(structures['smiles']):
+            minimum = structures.loc[structures['smiles'] == smi,
+                                     'depth'].min()
+            structures.loc[(structures['smiles'] == smi) &
+                           (structures['depth'] > minimum), 'depth'] = minimum
         return network
 
     def _compile_networks(self, exclude=[]):
@@ -875,7 +886,7 @@ class Network:
         if tree_depth:
             for rep in self.replica:
                 lengths = nx.shortest_path_length(rep['network'],
-                                                  source=self._first_smiles)
+                                                  source=self.first_smiles)
                 for node in lengths:
                     if lengths[node] > tree_depth:
                         rep['network'].remove_node(node)
@@ -994,23 +1005,36 @@ class Network:
                     molecule_to_contact_matrix(mol, atom_labels)
         return
 
-    def get_reaction_operators(self, atom_labels=None):
+    def get_reaction_operators(self, atom_labels=None, depth=None):
+        if depth is None:
+            depth = 0
+        else:
+            pass
         reaction_operators = []
         self.get_BEMatrices(atom_labels)
         for rep in self.replica:
             reaction_operators.append([])
-            for i, mat in enumerate(rep['structures']['matrix'][:-1]):
-                reactant = mat
+            for i, row in rep['structures'].iloc[:-1].iterrows():
+                if 'depth' in rep['structures'].columns:
+                    if row['depth'] > depth\
+                            or rep['structures'].loc[i + 1, 'depth'] > depth:
+                        continue
+                else:
+                    pass
+                # for i, mat in enumerate(rep['structures']['matrix'][:-1]):
+                # reactant = mat
+                reactant = row['matrix']
                 product = rep['structures']['matrix'][i + 1]
 
-                reactant_smiles = rep['structures'].loc[i, 'smiles']
+                # reactant_smiles = rep['structures'].loc[i, 'smiles']
+                reactant_smiles = row['smiles']
                 product_smiles = rep['structures'].loc[i + 1, 'smiles']
 
                 # if atom_labels is None:
-                    # pass
+                # pass
                 # else:
-                    # reactant.atoms = atom_labels
-                    # product.atoms = atom_labels
+                # reactant.atoms = atom_labels
+                # product.atoms = atom_labels
 
                 if np.all(reactant == product):
                     continue

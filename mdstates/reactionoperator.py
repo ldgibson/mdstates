@@ -73,6 +73,11 @@ class BEMatrix(np.ndarray):
         else:
             pass
         obj = np.asarray(a).view(cls)
+        # if atoms is None:
+        #     pass
+        # else:
+        #     assert len(obj) == len(atoms),\
+        #         "Atom list and matrix shape do not match."
         obj.atoms = atoms
         return obj
 
@@ -93,7 +98,11 @@ class BEMatrix(np.ndarray):
             else:
                 raise TypeError("Must passing proper index values.")
         else:
-            new_atoms = self.atoms[idx]
+            new_atoms = [self.atoms[idx]]
+        if isinstance(idx, int):
+            new = new.reshape(1, -1)
+        else:
+            pass
         new_mat = BEMatrix(new, atoms=new_atoms)
         return new_mat
 
@@ -131,6 +140,9 @@ class BEMatrix(np.ndarray):
     def __repr__(self):
         return self.__str__()
 
+    def __hash__(self):
+        return hash(repr(self))
+
     def __add__(self, other):
         if not isinstance(other, BEMatrix):
             raise TypeError("Both objects must be BEMatrix objects.")
@@ -153,14 +165,20 @@ class BEMatrix(np.ndarray):
         else:
             raise ValueError("Both objects must have the same atom list.")
 
+    def __eq__(self, other):
+        return np.all(super().__eq__(other))
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def is_equal(self, other):
         if isinstance(other, BEMatrix):
             for at1, at2 in zip(self.atoms, other.atoms):
-                if re.search("\d", at1):
+                if re.search("\d", at1):  # noqa
                     atom1 = re.search("[a-zA-Z]*", at1).group(0)
                 else:
                     atom1 = at1
-                if re.search("\d", at2):
+                if re.search("\d", at2):  # noqa
                     atom2 = re.search("[a-zA-Z]*", at2).group(0)
                 else:
                     atom2 = at2

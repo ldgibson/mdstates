@@ -976,12 +976,12 @@ class Network:
         mol.write('pdb', topology_path, overwrite=True)
         return topology_path
 
-    def get_BEMatrices(self):
+    def get_BEMatrices(self, atom_labels=None):
         for i in range(len(self.replica)):
-            self.get_BEMatrices_from_replica(i)
+            self.get_BEMatrices_from_replica(i, atom_labels)
         return
 
-    def get_BEMatrices_from_replica(self, repid):
+    def get_BEMatrices_from_replica(self, repid, atom_labels):
         if self.replica[repid]['structures'] is None:
             pass
         else:
@@ -990,13 +990,13 @@ class Network:
                                                            range(df_size)]
             for i, row in self.replica[repid]['structures'].iterrows():
                 mol = row['molecule']
-                self.replica[repid]['structures'].loc[i, 'matrix'] =\
-                    molecule_to_contact_matrix(mol)
+                self.replica[repid]['structures'].at[i, 'matrix'] =\
+                    molecule_to_contact_matrix(mol, atom_labels)
         return
 
     def get_reaction_operators(self, atom_labels=None):
         reaction_operators = []
-        self.get_BEMatrices()
+        self.get_BEMatrices(atom_labels)
         for rep in self.replica:
             reaction_operators.append([])
             for i, mat in enumerate(rep['structures']['matrix'][:-1]):
@@ -1006,11 +1006,11 @@ class Network:
                 reactant_smiles = rep['structures'].loc[i, 'smiles']
                 product_smiles = rep['structures'].loc[i + 1, 'smiles']
 
-                if atom_labels is None:
-                    pass
-                else:
-                    reactant.atoms = atom_labels
-                    product.atoms = atom_labels
+                # if atom_labels is None:
+                    # pass
+                # else:
+                    # reactant.atoms = atom_labels
+                    # product.atoms = atom_labels
 
                 if np.all(reactant == product):
                     continue

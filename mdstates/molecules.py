@@ -177,7 +177,7 @@ def set_positive_charges(mol):
     return
 
 
-def molecule_to_contact_matrix(mol):
+def molecule_to_contact_matrix(mol, atom_labels=None):
     """Converts an RDKit molecule into a contact matrix.
 
     Parameters
@@ -225,7 +225,10 @@ def molecule_to_contact_matrix(mol):
             cmat[i, j] = 3
         else:
             raise Exception("Unrecognized BondType.")
-    bemat = BEMatrix(cmat, atom_list.tolist())
+    if atom_labels is None:
+        bemat = BEMatrix(cmat, atom_list.tolist())
+    else:
+        bemat = BEMatrix(cmat, atom_labels)
     return bemat
 
 
